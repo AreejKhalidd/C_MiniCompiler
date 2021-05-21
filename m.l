@@ -18,13 +18,33 @@ return STR; }
 return CHAR; } 
 
 "float"  { yylval.Value_Int = FLOAT; 
-return FLOUT; }
+return FLOAT; }
 
 
-switch    return SWITCH;
-case     return CASE;
-break     return BREAK;
-default   return DEFAULT;
+"switch"    return SWITCH;
+"case"     return CASE;
+"break"     return BREAK;
+"default"   return DEFAULT;
+"("         return OPENROUND;
+")"         return CLOSEDROUND;
+"{"         return OPENCURLY;
+"}"         return CLOSEDCURLY;
+":"         return COLON;
+"for"       return FOR;
+"<"         return L ;
+">"         return G;
+"<="        return LE;
+">="        return GE;
+"=="        return EQ;
+"!="        return NE;
+"||"        return OR;
+"&&"        return AND;
+"++"        return INC;
+"--"        return DEC;
+";"         return SEMICOLON;
+"while"     return WHILE;
+"repeat"    return REPEAT;
+"until"     return UNTIL;
 
 "print"  { yylval.Value_Int = PRINT; 
 return PRINT; }

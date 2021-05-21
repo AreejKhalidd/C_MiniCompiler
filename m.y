@@ -48,11 +48,11 @@ char sValue[100];
 %token <Value_Int> INT CHAR STR FLOUT PRINT 
 %token <Value_char> PLUS MINUS MULT DIV EQU 
 %token <Object> INTEGER STRING FLOAT CHARACTER VARIABLE 
-%token SWITCH CASE BREAK DEFAULT 
+%token SWITCH CASE BREAK DEFAULT OPENROUND CLOSEDROUND OPENCURLY CLOSEDCURLY COLON L G LE GE NE EQ FOR OR AND INC DEC SEMICOLON WHILE REPEAT UNTIL
 
 %left '+' '-'
 %left '*' '/'
-%type <Object> expr statement S E B C D ST
+%type <Object> expr statement B C D ST
 %type <Value_Int> typeIdentifier 
 %%
 pro:
@@ -62,9 +62,20 @@ pro statement '\n'
 
 
 
-
+condtionalstatement:
+expr L expr
+         | expr G expr
+         | expr LE expr
+         | expr GE expr
+         | expr EQ expr
+         | expr NE expr
+         | expr OR expr
+         | expr AND expr
+         ;   
 expr:
 INTEGER
+| VARIABLE INC
+| VARIABLE DEC
 | FLOAT 
 | CHARACTER 
 | STRING 
@@ -76,13 +87,18 @@ INTEGER
 ;
 
 
-
+// printing an immediate value
 statement:
-PRINT VARIABLE { VARIABLE_PRINT($2);}
+statement statement
+| PRINT VARIABLE { VARIABLE_PRINT($2);}
 |typeIdentifier VARIABLE EQU expr { VARIABLE_INITIALIZATION($1, $2, $4); printf("\n\n");} 
 | VARIABLE EQU expr { SET_VALUE_OF_VAR($1,$3); printf("\n\n");}
 | typeIdentifier VARIABLE { VARIABLE_DECLARATION($1, $2);}
 | expr
+| ST {printf("Switch case accepted .\n");}
+| FR {printf("For Loop accepted .\n");}
+| WL {printf("while Loop accepted .\n");}
+| RPTUNTL {printf("repeat until loop accepted .\n");}
 ;
 
 typeIdentifier:
@@ -92,32 +108,34 @@ INT
 | STR 
 ;
 
-S       : ST {printf("Input accepted.\n");exit(0);}
-         ;
 
-ST     :    SWITCH '(' VARIABLE ')' '{' B '}'
+ST     :    SWITCH OPENROUND VARIABLE CLOSEDROUND OPENCURLY B CLOSEDCURLY
          ;
    
 B       :    C
-         |    C    D
+        |    C    D
         ;
    
 C      :    C    C
-        |    CASE INTEGER ':' E 
-        | BREAK 
+        |CASE INTEGER COLON statement
+        |CASE INTEGER COLON statement BREAK
         ;
 
-D      :    DEFAULT    ':' E  BREAK 
+D      :    DEFAULT    COLON statement
+        | DEFAULT    COLON statement BREAK
         ;
     
-E    : VARIABLE EQU E
-    | VARIABLE
-    | INTEGER
-    | E PLUS E  { $$ = OPER($1,$2,$3); }
-    | E MINUS E  { $$ = OPER($1,$2,$3); }
-    | E MULT E  { $$ = OPER($1,$2,$3); }
-    | E DIV E  { $$ = OPER($1,$2,$3); }
-   ;
+WL  :  WHILE OPENROUND condtionalstatement CLOSEDROUND DEF
+FR       : FOR  OPENROUND statement SEMICOLON condtionalstatement SEMICOLON statement CLOSEDROUND DEF
+           ;
+RPTUNTL  : REPEAT DEF UNTIL OPENROUND condtionalstatement CLOSEDROUND
+
+DEF    : OPENCURLY LOOPSTATEMENT CLOSEDCURLY
+LOOPSTATEMENT : LOOPSTATEMENT LOOPSTATEMENT 
+              | statement 
+              | BREAK
+              ;
+
 
 
 %%
