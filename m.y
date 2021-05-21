@@ -48,7 +48,7 @@ char sValue[100];
 %token <Value_Int> INT CHAR STR FLOUT PRINT 
 %token <Value_char> PLUS MINUS MULT DIV EQU 
 %token <Object> INTEGER STRING FLOAT CHARACTER VARIABLE 
-%token SWITCH CASE BREAK DEFAULT OPENROUND CLOSEDROUND OPENCURLY CLOSEDCURLY COLON L G LE GE NE EQ FOR OR AND INC DEC SEMICOLON WHILE REPEAT UNTIL
+%token SWITCH CASE BREAK DEFAULT OPENROUND CLOSEDROUND OPENCURLY CLOSEDCURLY COLON L G LE GE NE EQ FOR OR AND INC DEC SEMICOLON WHILE REPEAT UNTIL IF ELSE VOID COMMA
 
 %left '+' '-'
 %left '*' '/'
@@ -86,11 +86,12 @@ INTEGER
 |VARIABLE { $$ = VALUE_OF_VAR($1); }
 ;
 
-
+statements:
+statement statement
+| statement;
 // printing an immediate value
 statement:
-statement statement
-| PRINT VARIABLE { VARIABLE_PRINT($2);}
+ PRINT VARIABLE { VARIABLE_PRINT($2);}
 |typeIdentifier VARIABLE EQU expr { VARIABLE_INITIALIZATION($1, $2, $4); printf("\n\n");} 
 | VARIABLE EQU expr { SET_VALUE_OF_VAR($1,$3); printf("\n\n");}
 | typeIdentifier VARIABLE { VARIABLE_DECLARATION($1, $2);}
@@ -99,6 +100,8 @@ statement statement
 | FR {printf("For Loop accepted .\n");}
 | WL {printf("while Loop accepted .\n");}
 | RPTUNTL {printf("repeat until loop accepted .\n");}
+| IFELSE  {printf("if else accepted .\n");}
+| FUNCT {printf("function accepted .\n");}
 ;
 
 typeIdentifier:
@@ -109,6 +112,10 @@ INT
 ;
 
 
+FUNCT  :  typeIdentifier VARIABLE OPENROUND parameters CLOSEDROUND OPENCURLY statements  CLOSEDCURLY|
+          VOID VARIABLE OPENROUND  CLOSEDROUND OPENCURLY  CLOSEDCURLY;
+param: parameters|
+parameters : typeIdentifier VARIABLE| parameters COMMA typeIdentifier VARIABLE;
 ST     :    SWITCH OPENROUND VARIABLE CLOSEDROUND OPENCURLY B CLOSEDCURLY
          ;
    
@@ -125,14 +132,19 @@ D      :    DEFAULT    COLON statement
         | DEFAULT    COLON statement BREAK
         ;
     
-WL  :  WHILE OPENROUND condtionalstatement CLOSEDROUND DEF
-FR       : FOR  OPENROUND statement SEMICOLON condtionalstatement SEMICOLON statement CLOSEDROUND DEF
+WL  :  WHILE OPENROUND condtionalstatement CLOSEDROUND DEF ;
+FR       : FOR  OPENROUND statement SEMICOLON condtionalstatement SEMICOLON statement CLOSEDROUND DEF ;
+IFELSE   : IFF |
+           IFFELSE
            ;
+IFF : IF OPENROUND condtionalstatement CLOSEDROUND OPENCURLY statements CLOSEDCURLY;
+IFFELSE : IFF ELSE OPENCURLY statements CLOSEDCURLY
+
 RPTUNTL  : REPEAT DEF UNTIL OPENROUND condtionalstatement CLOSEDROUND
 
 DEF    : OPENCURLY LOOPSTATEMENT CLOSEDCURLY
 LOOPSTATEMENT : LOOPSTATEMENT LOOPSTATEMENT 
-              | statement 
+              | statements 
               | BREAK
               ;
 

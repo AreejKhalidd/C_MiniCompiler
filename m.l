@@ -45,6 +45,12 @@ return FLOAT; }
 "while"     return WHILE;
 "repeat"    return REPEAT;
 "until"     return UNTIL;
+"if"        return IF;
+"else"      return ELSE;
+"void"      return VOID;
+","         return COMMA;
+
+
 
 "print"  { yylval.Value_Int = PRINT; 
 return PRINT; }
