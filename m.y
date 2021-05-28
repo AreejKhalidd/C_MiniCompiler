@@ -102,6 +102,7 @@ statement:
 | RPTUNTL {printf("repeat until loop accepted .\n");}
 | IFELSE  {printf("if else accepted .\n");}
 | FUNCT {printf("function accepted .\n");}
+| ENUM {printf("ENUM accepted .\n");}
 ;
 
 typeIdentifier:
@@ -147,6 +148,9 @@ LOOPSTATEMENT : LOOPSTATEMENT LOOPSTATEMENT
               | statements 
               | BREAK
               ;
+ENUMSTATEMENT : ENUM VARIABLE OPENCURLY ENUMLIST CLOSECURLY 
+ENUMLIST      : VARIABLE
+                | ENUMLIST COMMA VARIABLE
 
 
 

@@ -20,7 +20,7 @@ return CHAR; }
 "float"  { yylval.Value_Int = FLOAT; 
 return FLOAT; }
 
-
+"enum"      return ENUM;
 "switch"    return SWITCH;
 "case"     return CASE;
 "break"     return BREAK;
