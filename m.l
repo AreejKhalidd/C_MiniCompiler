@@ -18,7 +18,9 @@ return STR; }
 return CHAR; } 
 
 "float"  { yylval.Value_Int = FLOAT; 
-return FLOAT; }
+return FLOUT; }
+"bool"  { yylval.Value_Int = BOOL; 
+return BOOL2; }
 
 "enum"      return ENUM;
 "switch"    return SWITCH;

@@ -32,6 +32,7 @@ void VARIABLE_PRINT(struct Obj in);
         char char_value;
         char s_value[100];
         bool is_initialized;
+        bool bool_value;
     };
 
     struct Obj ARRAY[100];
@@ -45,9 +46,9 @@ char sValue[100];
 };
 
 
-%token <Value_Int> INT CHAR STR FLOUT PRINT 
+%token <Value_Int> INT CHAR STR FLOUT PRINT BOOL2
 %token <Value_char> PLUS MINUS MULT DIV EQU 
-%token <Object> INTEGER STRING FLOAT CHARACTER VARIABLE 
+%token <Object> INTEGER STRING FLOAT CHARACTER VARIABLE BOOL
 %token SWITCH CASE BREAK DEFAULT OPENROUND CLOSEDROUND OPENCURLY CLOSEDCURLY COLON L G LE GE NE EQ FOR OR AND INC DEC SEMICOLON WHILE REPEAT UNTIL IF ELSE VOID COMMA ENUM
 
 %left '+' '-'
@@ -73,10 +74,11 @@ expr L expr
          | expr AND expr
          ;   
 expr:
-INTEGER
+BOOL
+|INTEGER
 | VARIABLE INC
-| VARIABLE DEC
-| FLOAT 
+| VARIABLE DEC 
+|FLOAT
 | CHARACTER 
 | STRING 
 | expr PLUS expr { $$ = OPER($1,$2,$3); }
@@ -103,11 +105,12 @@ statement:
 | RPTUNTL {printf("repeat until loop accepted .\n");}
 | IFELSE  {printf("if else accepted .\n");}
 | FUNCT {printf("function accepted .\n");}
-| ENUM {printf("ENUM accepted .\n");}
+| ENUMSTATEMENT {printf("ENUM accepted .\n");}
 ;
 
 typeIdentifier:
-INT 
+BOOL2
+|INT 
 | CHAR
 | FLOUT 
 | STR 
@@ -302,7 +305,11 @@ void VARIABLE_PRINT(struct Obj in) {
             else if(ARRAY[check].set_type == FLOAT) {
                 printf("%f", ARRAY[check].float_value);
                  printf("\n");
-                }           
+                }   
+            else if(ARRAY[check].set_type == BOOL) {
+                printf("%f", ARRAY[check].bool_value);
+                 printf("\n");
+                }         
         }
     }
 }
