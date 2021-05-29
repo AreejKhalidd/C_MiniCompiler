@@ -1,5 +1,6 @@
 character [A-Za-z]
 num [0-9]
+t   (true|false)
 %{
 #include <stdlib.h>
 #include <string.h>
@@ -56,6 +57,17 @@ return BOOL2; }
 
 "print"  { yylval.Value_Int = PRINT; 
 return PRINT; }
+
+
+
+{t}  {   
+               strcpy(yylval.Object.name, "");
+           yylval.Object.bool_value = true; 
+          yylval.Object.set_type = BOOL;      
+           yylval.Object.is_initialized = true; 
+           return BOOL; 
+        
+           }
 
 {num}+ {  strcpy(yylval.Object.name, ""); 
 yylval.Object.integer_value = atoi(yytext); 

@@ -307,7 +307,7 @@ void VARIABLE_PRINT(struct Obj in) {
                  printf("\n");
                 }   
             else if(ARRAY[check].set_type == BOOL) {
-                printf("%f", ARRAY[check].bool_value);
+                printf("Boolean accepted"); // to be changed.....
                  printf("\n");
                 }         
         }
@@ -335,6 +335,8 @@ if(check==-1){
                 {ARRAY[check].char_value = expr.char_value;}
                 else if (ARRAY[check].set_type == STRING) 
                 {strcpy(ARRAY[check].s_value,expr.s_value);}
+                 else if (ARRAY[check].set_type == BOOL) 
+                {ARRAY[check].bool_value,expr.bool_value;}
 
                 ARRAY[check].is_initialized = true; //tamam initialized
 
@@ -345,9 +347,9 @@ if(check==-1){
 
 void VARIABLE_INITIALIZATION(int type, struct Obj in, struct Obj expr) { //heena byhsal feeha el two function el ablha 3latouul
 
-/*if(type != expr.set_type) {
+if(type != expr.set_type) {
 yyerror("Type mismatch");
-}*/
+}
     if(type == expr.set_type) {
         if(VARIABLE_DECLARATION(type, in)) SET_VALUE_OF_VAR(in, expr);
     }
