@@ -81,6 +81,7 @@ BOOL
 |FLOAT
 | CHARACTER 
 | STRING 
+| condtionalstatement
 | expr PLUS expr { $$ = OPER($1,$2,$3); }
 | expr MINUS expr { $$ = OPER($1,$2,$3); }
 | expr MULT expr { $$ = OPER($1,$2,$3); }
@@ -94,7 +95,6 @@ statement statement
 // printing an immediate value
 statement:
  PRINT VARIABLE { VARIABLE_PRINT($2);}
-| PRINT expr
 |typeIdentifier VARIABLE EQU expr { VARIABLE_INITIALIZATION($1, $2, $4); printf("\n\n");} 
 | VARIABLE EQU expr { SET_VALUE_OF_VAR($1,$3); printf("\n\n");}
 | typeIdentifier VARIABLE { VARIABLE_DECLARATION($1, $2);}
@@ -345,9 +345,9 @@ if(check==-1){
 
 void VARIABLE_INITIALIZATION(int type, struct Obj in, struct Obj expr) { //heena byhsal feeha el two function el ablha 3latouul
 
-if(type != expr.set_type) {
+/*if(type != expr.set_type) {
 yyerror("Type mismatch");
-}
+}*/
     if(type == expr.set_type) {
         if(VARIABLE_DECLARATION(type, in)) SET_VALUE_OF_VAR(in, expr);
     }
