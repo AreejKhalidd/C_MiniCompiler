@@ -4,17 +4,23 @@
 #include <string.h>
 #include <stdbool.h>
 
+
+char temp[3];
 void yyerror(char *);
 int yylex(void);
 int index_ok = 0;
+int q_index = 0;
+char result_name[3] = {'t','0','\0'};
 
 struct Obj OPER(struct Obj expr1, char operators, struct Obj expr2);
+void print_quadruples();
 struct Obj VALUE_OF_VAR(struct Obj n);
 int CHECK_DECLARATION(struct Obj coming);
 bool VARIABLE_DECLARATION(int type, struct Obj coming);
 void SET_VALUE_OF_VAR(struct Obj in, struct Obj expr);
 void VARIABLE_INITIALIZATION(int type, struct Obj in, struct Obj expr);
 void VARIABLE_PRINT(struct Obj in);
+struct Obj put_in_temp(struct Obj n);
 
 
 
@@ -36,6 +42,12 @@ void VARIABLE_PRINT(struct Obj in);
     };
 
     struct Obj ARRAY[100];
+    struct quad{
+    char op;
+    char arg1[10];
+    char arg2[10];
+    char result[10];
+}Quadruples[30];
 }
 
 %union {
@@ -51,8 +63,9 @@ char sValue[100];
 %token <Object> INTEGER STRING FLOAT CHARACTER VARIABLE BOOL
 %token SWITCH CASE BREAK DEFAULT OPENROUND CLOSEDROUND OPENCURLY CLOSEDCURLY COLON L G LE GE NE EQ FOR OR AND INC DEC SEMICOLON WHILE REPEAT UNTIL IF ELSE VOID COMMA ENUM
 
-%left '+' '-'
-%left '*' '/'
+
+%left  MINUS PLUS
+%left  MULT DIV
 %type <Object> expr statement B C D ST
 %type <Value_Int> typeIdentifier 
 %%
@@ -73,9 +86,10 @@ expr L expr
          | expr OR expr
          | expr AND expr
          ;   
+
 expr:
 BOOL
-|INTEGER
+|INTEGER{$$=put_in_temp($1);}
 | VARIABLE INC
 | VARIABLE DEC 
 |FLOAT
@@ -89,13 +103,15 @@ BOOL
 |VARIABLE { $$ = VALUE_OF_VAR($1); }
 ;
 
+
+
 statements:
 statement statement
 | statement;
 // printing an immediate value
 statement:
  PRINT VARIABLE { VARIABLE_PRINT($2);}
-|typeIdentifier VARIABLE EQU expr { VARIABLE_INITIALIZATION($1, $2, $4); printf("\n\n");} 
+|typeIdentifier VARIABLE EQU expr { VARIABLE_INITIALIZATION($1, $2, $4); printf("\n\n"); print_quadruples();} 
 | VARIABLE EQU expr { SET_VALUE_OF_VAR($1,$3); printf("\n\n");}
 | typeIdentifier VARIABLE { VARIABLE_DECLARATION($1, $2);}
 | expr
@@ -224,7 +240,13 @@ struct Obj OPER(struct Obj in1, char operators, struct Obj in2) {
 
     }
 }
-
+    strcpy(Quadruples[q_index].arg1, in1.name);
+    Quadruples[q_index].op = operators;
+    strcpy(Quadruples[q_index].arg2, in2.name);
+    strcpy(Quadruples[q_index].result, result_name);
+    strcpy(result.name,result_name);
+    result_name[1]++;
+    q_index++;
     return result;
 }
 
@@ -257,6 +279,8 @@ struct Obj VALUE_OF_VAR(struct Obj n) { //yegeb variable already mawgood
            return  value2;
         }
     }
+
+    q_index++;
     return value;
 }
 
@@ -338,6 +362,13 @@ if(check==-1){
                  else if (ARRAY[check].set_type == BOOL) 
                 {ARRAY[check].bool_value,expr.bool_value;}
 
+                char tempLocal[3] = {' ',' ','\0'};
+                strcpy(Quadruples[q_index].arg1,expr.name);
+                Quadruples[q_index].op = '=';
+                strcpy(Quadruples[q_index].arg2,tempLocal);
+                strcpy(Quadruples[q_index].result,in.name);
+                q_index++;
+
                 ARRAY[check].is_initialized = true; //tamam initialized
 
             }
@@ -357,5 +388,22 @@ yyerror("Type mismatch");
 
 
 
+void print_quadruples(){
+    printf("weeeeeeeeeee %d\n",q_index);
+    for(int i=0;i<q_index;i++){
+        printf("quadruple arg1: %s\n",Quadruples[i].arg1);
+        printf("quadruple arg2: %s\n",Quadruples[i].arg2);
+        printf("quadruple result: %s\n",Quadruples[i].result);
+        printf("kjdkfjks\n");
+        printf("quadruple operand %c:\n",Quadruples[i].op);
+    }
+}
 
+struct Obj put_in_temp(struct Obj n) { 
+    struct Obj value=n;
+    strcpy(value.name,result_name);
+    result_name[1]++;
+    printf("%d",n.integer_value);
+    return value;
+}
 
