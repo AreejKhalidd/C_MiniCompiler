@@ -11,6 +11,8 @@ int yylex(void);
 int index_ok = 0;
 int q_index = 0;
 char result_name[3] = {'t','0','\0'};
+int lbl=0;
+int lbl1,lbl2=0;
 
 struct Obj OPER(struct Obj expr1, char operators, struct Obj expr2);
 void print_quadruples();
@@ -21,7 +23,9 @@ void SET_VALUE_OF_VAR(struct Obj in, struct Obj expr);
 void VARIABLE_INITIALIZATION(int type, struct Obj in, struct Obj expr);
 void VARIABLE_PRINT(struct Obj in);
 struct Obj put_in_temp(struct Obj n);
-
+void label();
+void label2();
+void label3();
 
 
 %} 
@@ -32,6 +36,7 @@ struct Obj put_in_temp(struct Obj n);
     {
         //value
         char name[100];
+        char registerName[100];
         int set_type;
         int integer_value;
         float float_value;
@@ -63,10 +68,9 @@ char sValue[100];
 %token <Object> INTEGER STRING FLOAT CHARACTER VARIABLE BOOL
 %token SWITCH CASE BREAK DEFAULT OPENROUND CLOSEDROUND OPENCURLY CLOSEDCURLY COLON L G LE GE NE EQ FOR OR AND INC DEC SEMICOLON WHILE REPEAT UNTIL IF ELSE VOID COMMA ENUM
 
-
 %left  MINUS PLUS
 %left  MULT DIV
-%type <Object> expr statement B C D ST
+%type <Object> expr statement B C D ST condtionalstatement
 %type <Value_Int> typeIdentifier 
 %%
 pro:
@@ -77,14 +81,14 @@ pro statement '\n'
 
 
 condtionalstatement:
-expr L expr
-         | expr G expr
-         | expr LE expr
-         | expr GE expr
-         | expr EQ expr
-         | expr NE expr
-         | expr OR expr
-         | expr AND expr
+expr L expr{ $$ = OPER($1,'<',$3); }
+         | expr G expr{ $$ = OPER($1,'>',$3); }
+         | expr LE expr{ $$ = OPER($1,'l',$3); }
+         | expr GE expr{ $$ = OPER($1,'g',$3); }
+         | expr EQ expr{ $$ = OPER($1,'c',$3); }
+         | expr NE expr{ $$ = OPER($1,'!',$3); }
+         | expr OR expr{ $$ = OPER($1,'|',$3); }
+         | expr AND expr{ $$ = OPER($1,'&',$3); }
          ;   
 
 expr:
@@ -110,7 +114,7 @@ statement statement
 | statement;
 // printing an immediate value
 statement:
- PRINT VARIABLE { VARIABLE_PRINT($2);}
+ PRINT expr { VARIABLE_PRINT($2);}
 |typeIdentifier VARIABLE EQU expr { VARIABLE_INITIALIZATION($1, $2, $4); printf("\n\n"); print_quadruples();} 
 | VARIABLE EQU expr { SET_VALUE_OF_VAR($1,$3); printf("\n\n");}
 | typeIdentifier VARIABLE { VARIABLE_DECLARATION($1, $2);}
@@ -132,7 +136,6 @@ BOOL2
 | STR 
 ;
 
-
 FUNCT  :  typeIdentifier VARIABLE OPENROUND parameters CLOSEDROUND OPENCURLY statements  CLOSEDCURLY|
           VOID VARIABLE OPENROUND  CLOSEDROUND OPENCURLY  CLOSEDCURLY;
 param: parameters|
@@ -153,7 +156,7 @@ D      :    DEFAULT    COLON statement
         | DEFAULT    COLON statement BREAK
         ;
     
-WL  :  WHILE OPENROUND condtionalstatement CLOSEDROUND DEF ;
+WL  :  WHILE {label();} OPENROUND condtionalstatement CLOSEDROUND{label2();} DEF{label3();}
 FR       : FOR  OPENROUND statement SEMICOLON condtionalstatement SEMICOLON statement CLOSEDROUND DEF ;
 IFELSE   : IFF |
            IFFELSE
@@ -186,6 +189,7 @@ yyparse();
 fclose(yyin);
 return 0;
 }
+
 
 struct Obj OPER(struct Obj in1, char operators, struct Obj in2) {
     
@@ -240,16 +244,51 @@ struct Obj OPER(struct Obj in1, char operators, struct Obj in2) {
 
     }
 }
-    strcpy(Quadruples[q_index].arg1, in1.name);
+    strcpy(Quadruples[q_index].arg1, in1.registerName);
     Quadruples[q_index].op = operators;
-    strcpy(Quadruples[q_index].arg2, in2.name);
+    strcpy(Quadruples[q_index].arg2, in2.registerName);
     strcpy(Quadruples[q_index].result, result_name);
-    strcpy(result.name,result_name);
+    strcpy(result.registerName,result_name);
     result_name[1]++;
+    if(operators=='-') printf("sub %s,%s,%s\n",Quadruples[q_index].result,in1.registerName,in2.registerName);
+    if(operators=='+') printf("Add %s,%s,%s\n",Quadruples[q_index].result,in1.registerName,in2.registerName);
+    if(operators=='*') printf("MUL %s,%s,%s\n",Quadruples[q_index].result,in1.registerName,in2.registerName);
+    if(operators=='/') printf("DIV %s,%s,%s\n",Quadruples[q_index].result,in1.registerName,in2.registerName);
+    if(operators=='c') {
+        printf("compEQ %s,%s\n",in1.registerName,in2.registerName);
+        result_name[1]='0';
+        }
+    if(operators=='>') {
+        printf("compGT %s,%s\n",in1.registerName,in2.registerName);
+        result_name[1]='0';
+        }
+    if(operators=='<') {
+        printf("compLT %s,%s\n",in1.registerName,in2.registerName);
+        result_name[1]='0';
+    }
+    if(operators=='!') {
+        printf("compNE %s,%s\n",in1.registerName,in2.registerName);
+        result_name[1]='0';
+    }
+    if(operators=='&') {
+        printf("AND %s,%s\n",in1.registerName,in2.registerName);
+        result_name[1]='0';
+    }
+    if(operators=='|') {
+        printf("OR %s,%s\n",in1.registerName,in2.registerName);
+        result_name[1]='0';
+    }
+    if(operators=='g') {
+        printf("compGE %s,%s\n",in1.registerName,in2.registerName);
+        result_name[1]='0';
+    }
+    if(operators=='l') {
+    printf("compLE %s,%s\n",in1.registerName,in2.registerName);
+    result_name[1]='0';
+    }
     q_index++;
     return result;
 }
-
 
 int CHECK_DECLARATION(struct Obj coming) { //return index of object in symbol table
 
@@ -276,11 +315,19 @@ struct Obj VALUE_OF_VAR(struct Obj n) { //yegeb variable already mawgood
         else 
         {
             struct Obj value2 = ARRAY[check];
+            strcpy(Quadruples[q_index].arg1, n.name);
+            Quadruples[q_index].op = '=';
+            strcpy(Quadruples[q_index].arg2, "");
+            strcpy(Quadruples[q_index].result, result_name);
+            strcpy(value2.registerName,result_name);
+            result_name[1]++;
+            printf("LD %s,%s\n",Quadruples[q_index].result,n.name);
+
+            q_index++;
            return  value2;
         }
     }
-
-    q_index++;
+    //q_index++;
     return value;
 }
 
@@ -335,6 +382,7 @@ void VARIABLE_PRINT(struct Obj in) {
                  printf("\n");
                 }         
         }
+        printf("print %s\n",in.registerName);
     }
 }
 
@@ -363,10 +411,12 @@ if(check==-1){
                 {ARRAY[check].bool_value,expr.bool_value;}
 
                 char tempLocal[3] = {' ',' ','\0'};
-                strcpy(Quadruples[q_index].arg1,expr.name);
+                strcpy(Quadruples[q_index].arg1,expr.registerName);
                 Quadruples[q_index].op = '=';
                 strcpy(Quadruples[q_index].arg2,tempLocal);
                 strcpy(Quadruples[q_index].result,in.name);
+                printf("ST %s,%s",Quadruples[q_index].result,expr.registerName);
+                result_name[1]='0';
                 q_index++;
 
                 ARRAY[check].is_initialized = true; //tamam initialized
@@ -401,9 +451,20 @@ void print_quadruples(){
 
 struct Obj put_in_temp(struct Obj n) { 
     struct Obj value=n;
-    strcpy(value.name,result_name);
+    strcpy(value.registerName,result_name);
     result_name[1]++;
-    printf("%d",n.integer_value);
+    //printf("%d",n.integer_value);
+    printf("LD %s,%d\n",value.registerName,value.integer_value);
+    //printf("LD R2,%s\n",Quadruples[q_index].arg2);
     return value;
 }
-
+void label(){
+printf("L%03d:\n", lbl1 = lbl++);
+}
+void label2(){
+printf("leeeh\n");
+printf("jz\tL%03d\n", lbl2 = lbl++);
+}
+void label3(){
+    printf("jmp\tL%03d\n", lbl1); printf("L%03d:\n", lbl2); 
+}
