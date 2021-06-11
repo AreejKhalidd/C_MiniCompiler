@@ -52,6 +52,7 @@ return BOOL2; }
 "else"      return ELSE;
 "void"      return VOID;
 ","         return COMMA;
+"return"    return RETURN;
 
 
 

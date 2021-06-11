@@ -90,13 +90,14 @@ struct Obj put_in_temp(struct Obj n);
 void label();
 void label2();
 void label3();
-void initialize_stack();
+void initialize_stack(int type);
 void get_variable_object(int type);
 void get_variable_object_type(struct Obj coming);
 bool FUNCTION_DECLARATION(int type, struct Obj coming) ;
 void initialize_function(int type, struct Obj in);
 struct Obj get_function(struct Obj var);
 void get_variable_object_type(struct Obj coming);
+bool check_return_type(struct Obj var);
 
 
 %} 
@@ -132,6 +133,8 @@ void get_variable_object_type(struct Obj coming);
 
 struct Stack* parameters;
 int no_parameters;
+int function_type;
+bool returned;
 }
 
 %union {
@@ -146,7 +149,7 @@ char sValue[100];
 %token <Value_Int> INT CHAR STR FLOUT PRINT BOOL2
 %token <Value_char> PLUS MINUS MULT DIV EQU 
 %token <Object> INTEGER STRING FLOAT CHARACTER VARIABLE BOOL 
-%token SWITCH CASE BREAK DEFAULT OPENROUND CLOSEDROUND OPENCURLY CLOSEDCURLY COLON L G LE GE NE EQ FOR OR AND INC DEC SEMICOLON WHILE REPEAT UNTIL IF ELSE VOID COMMA ENUM
+%token SWITCH CASE BREAK DEFAULT OPENROUND CLOSEDROUND OPENCURLY CLOSEDCURLY COLON L G LE GE NE EQ FOR OR AND INC DEC SEMICOLON WHILE REPEAT UNTIL IF ELSE VOID COMMA ENUM RETURN
 
 %left  MINUS PLUS
 %left  MULT DIV
@@ -192,6 +195,13 @@ BOOL
 statements:
 statement statement
 | statement;
+
+functionstatements:
+functionstatements functionstatements
+| statements
+| RETURN expr{check_return_type($2);}
+| RETURN
+;
 // printing an immediate value
 statement:
  PRINT expr { VARIABLE_PRINT($2);}
@@ -219,14 +229,15 @@ BOOL2
 | STR 
 ;
 
-FUNCT  :  typeIdentifier VARIABLE  {initialize_stack();}  OPENROUND parameters CLOSEDROUND OPENCURLY statements  CLOSEDCURLY{initialize_function($1,$2);}|
+FUNCT  :  typeIdentifier VARIABLE  {initialize_stack($1);}  OPENROUND parameters CLOSEDROUND OPENCURLY functionstatements  CLOSEDCURLY{initialize_function($1,$2);}|
           VOID VARIABLE OPENROUND  CLOSEDROUND OPENCURLY  CLOSEDCURLY;
-FUNCTCALL : VARIABLE OPENROUND {initialize_stack();} DeclaredParameters CLOSEDROUND{get_function($1)};
+
+FUNCTCALL : VARIABLE OPENROUND {initialize_stack(1);} DeclaredParameters CLOSEDROUND{get_function($1)};
 DeclaredParameters:VARIABLE{get_variable_object_type($1)}
 | DeclaredParameters COMMA VARIABLE{get_variable_object_type($3)};
 
-parameters : typeIdentifier VARIABLE{get_variable_object($1)}
-| parameters COMMA typeIdentifier VARIABLE{get_variable_object($3)};
+parameters : typeIdentifier VARIABLE{VARIABLE_DECLARATION($1, $2); get_variable_object($1);}
+| parameters COMMA typeIdentifier VARIABLE{VARIABLE_DECLARATION($3, $4); get_variable_object($3); };
 ST     :    SWITCH OPENROUND VARIABLE CLOSEDROUND OPENCURLY B CLOSEDCURLY
          ;
    
@@ -392,6 +403,7 @@ struct Obj VALUE_OF_VAR(struct Obj n) { //yegeb variable already mawgood
     int check = CHECK_DECLARATION(n);
     value.is_initialized = false;
     if(check == -1) {
+        printf("%s",n.name);
     yyerror("the variable is undeclared");
     }
     else 
@@ -569,17 +581,19 @@ void get_variable_object_type(struct Obj coming){
         no_parameters++;
 }
 
-void initialize_stack(){
+void initialize_stack(int type){
     no_parameters=0;
     parameters=createStack(100);
+    returned=false;
+    function_type=type;
 }
 
 void initialize_function(int type, struct Obj in) { //heena byhsal feeha el two function el ablha 3latouul
+  if(!returned) yyerror("The funstion has no return");
   FUNCTION_DECLARATION(type, in);
 }
 
 bool FUNCTION_DECLARATION(int type, struct Obj coming) { //awel may3rf variable ok m3aia
-
 int check=CHECK_DECLARATION(coming);
     if(check != -1){yyerror("Function already declared!"); //already declared
     return false;
@@ -624,4 +638,10 @@ struct Obj get_function(struct Obj var){
     result.set_type = ARRAY[index].set_type;
     result.is_initialized = true;
     return result;
+}
+bool check_return_type(struct Obj var){
+printf("variable %d",var.set_type);
+printf("function_type %d",function_type);
+if(var.set_type!=function_type)yyerror("return type is wrong\n");
+else returned=true;
 }
