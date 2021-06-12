@@ -163,6 +163,7 @@ int yylex(void);
 int index_ok = 0;
 int q_index = 0;
 char result_name[3] = {'t','0','\0'};
+char address_register_name[3] = {'d','0','\0'};
 int lbl=0;
 int lbl1,lbl2=0;
 int lbl_function=0;
@@ -182,7 +183,7 @@ void label2();
 void label3();
 void initialize_stack(int type);
 void initialize_stack_void(int type);
-void get_variable_object(int type);
+void get_variable_object(int type,struct Obj coming);
 void get_variable_object_type(struct Obj coming);
 bool FUNCTION_DECLARATION(int type, struct Obj coming) ;
 void initialize_function(int type, struct Obj in);
@@ -190,6 +191,7 @@ struct Obj get_function(struct Obj var);
 void get_variable_object_type(struct Obj coming);
 bool check_return_type(struct Obj var);
 bool check_return_type_void();
+void pop_paramters();
 
 
 %} 
@@ -326,15 +328,15 @@ BOOL2
 | STR 
 ;
 
-FUNCT  :  typeIdentifier VARIABLE  {initialize_stack($1);}  OPENROUND parameters CLOSEDROUND OPENCURLY{printf("L%03d:\n", lbl);lbl_function=lbl++;} functionstatements  CLOSEDCURLY{initialize_function($1,$2);}|
+FUNCT  :  typeIdentifier VARIABLE  {initialize_stack($1);}  OPENROUND parameters CLOSEDROUND OPENCURLY{printf("L%03d:\n", lbl);lbl_function=lbl++;printf("pop %s\n",address_register_name);pop_paramters();} functionstatements  CLOSEDCURLY{initialize_function($1,$2);}|
           VOID VARIABLE {initialize_stack_void($1);} OPENROUND parameters CLOSEDROUND OPENCURLY {printf("L%03d:\n",lbl);lbl_function=lbl++} functionstatements {printf("pop %s\n",result_name);printf("JMP %s\n",result_name);} CLOSEDCURLY{initialize_function(VOID,$2);};
 
 FUNCTCALL : VARIABLE OPENROUND {initialize_stack_void(1);} DeclaredParameters CLOSEDROUND{$$=get_function($1)};
 DeclaredParameters:expr{get_variable_object_type($1)}
 | DeclaredParameters COMMA expr{get_variable_object_type($3)};
 
-parameters : typeIdentifier VARIABLE{DECLARATION_function($1, $2); get_variable_object($1);}
-| parameters COMMA typeIdentifier VARIABLE{DECLARATION_function($3, $4); get_variable_object($3); };
+parameters : typeIdentifier VARIABLE{DECLARATION_function($1, $2); get_variable_object($1,$2);}
+| parameters COMMA typeIdentifier VARIABLE{DECLARATION_function($3, $4); get_variable_object($3,$4); };
 |;
 ST     :    SWITCH OPENROUND VARIABLE CLOSEDROUND OPENCURLY B CLOSEDCURLY
          ;
@@ -536,8 +538,6 @@ int check=CHECK_DECLARATION(coming);
     if (check == -1) { //so declare it
         ARRAY[index_ok].set_type = type; strcpy(ARRAY[index_ok].name, coming.name);
         ARRAY[index_ok].is_initialized = true;
-        printf("pop %s\n",result_name);
-        printf("store %s,%s\n",ARRAY[index_ok].name,result_name);
         //strcpy(ARRAY[index_ok].registerName,result_name);
         //result_name[1]++;
         index_ok++;
@@ -686,8 +686,9 @@ void label3(){
     printf("jmp\tL%03d\n", lbl1); printf("L%03d:\n", lbl2); 
 }
 
-void get_variable_object(int type){
+void get_variable_object(int type,struct Obj coming){
         push(parameters, type);
+        strlist_append(param_names,coming.name);
         no_parameters++;
 }
 
@@ -763,10 +764,10 @@ struct Obj get_function(struct Obj var){
     }
     result.set_type = ARRAY[index].set_type;
     result.is_initialized = true;
-    printf("L%03d:\n", lbl);
-    printf("LOAD %s ,L%03d:\n", result_name,lbl);
+    printf("LD %s ,L%03d:\n", result_name,lbl);
     printf("push %s\n",result_name);
     printf("JMP L%03d\n",ARRAY[index].label);
+    printf("L%03d:\n", lbl++);
     printf("pop %s\n",result_name);
     strcpy(result.registerName,result_name);
     return result;
@@ -775,12 +776,21 @@ bool check_return_type(struct Obj var){
 if(var.set_type!=function_type)yyerror("return type is wrong\n");
 else {
     returned=true;
-    printf("pop %s\n",result_name);
+    //printf("pop %s\n",result_name);
     printf("push %s\n",var.registerName);
-    printf("JMP %s\n",result_name);
+    printf("JMP %s\n",address_register_name);
     }
 }
 bool check_return_type_void(){
 if(VOID!=function_type)yyerror("return type is wrong\n");
 else returned=true;
+}
+void pop_paramters(){
+    char* param_name;
+    param_name=strlist_pop(param_names);
+    while(param_name){
+        printf("pop %s\n",result_name);
+        printf("ST %s,%s\n",param_name,result_name);
+        param_name=strlist_pop(param_names);
+    }
 }
