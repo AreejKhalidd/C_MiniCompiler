@@ -170,7 +170,7 @@ int lbl_function=0;
 
 int enum_counter=0;
 
-void evaluate_enum_element(string element);
+
 void restart_enum_counter();
 struct Obj OPER(struct Obj expr1, char operators, struct Obj expr2);
 void print_quadruples();
@@ -196,7 +196,7 @@ void get_variable_object_type(struct Obj coming);
 bool check_return_type(struct Obj var);
 bool check_return_type_void();
 void pop_paramters();
-
+void evaluate_enum_element(struct Obj element);
 
 %} 
 
@@ -372,7 +372,7 @@ LOOPSTATEMENT : LOOPSTATEMENT LOOPSTATEMENT
               | statements 
               | BREAK
               ;
-ENUMSTATEMENT : ENUM VARIABLE OPENCURLY ENUMLIST CLOSEDCURLY {restart_enum_counter();}
+ENUMSTATEMENT : ENUM VARIABLE OPENCURLY {restart_enum_counter();} ENUMLIST CLOSEDCURLY 
 ENUMLIST      : VARIABLE {evaluate_enum_element($1);}
                 | ENUMLIST COMMA VARIABLE {evaluate_enum_element($3);}
 
@@ -380,15 +380,15 @@ ENUMLIST      : VARIABLE {evaluate_enum_element($1);}
 
 %%
 void yyerror(char *s) {
-fprintf(stderr, "%s\n", s);
+    fprintf(stderr, "%s\n", s);
 }
 
 int main(int argc, char *argv[]) {
-extern FILE *yyin;
-yyin = fopen(argv[1], "r");
-yyparse();
-fclose(yyin);
-return 0;
+    extern FILE *yyin;
+    yyin = fopen(argv[1], "r");
+    yyparse();
+    fclose(yyin);
+    return 0;
 }
 
 
@@ -484,21 +484,24 @@ struct Obj OPER(struct Obj in1, char operators, struct Obj in2) {
         result_name[1]='0';
     }
     if(operators=='l') {
-    printf("compLE %s,%s\n",in1.registerName,in2.registerName);
-    result_name[1]='0';
+        printf("compLE %s,%s\n",in1.registerName,in2.registerName);
+        result_name[1]='0';
     }
     q_index++;
     return result;
 }
 
-void evaluate_enum_element(string element)
+void evaluate_enum_element(struct Obj element)
 {
     //add to symbol table, value=enum_counter
-    printf("evaluating,counter=%d",enum_counter);
-    ARRAY[index1].name=element;
-    ARRAY[index1].value=enum_counter++;
-    //ARRAY[index1].set_type = int;
-    ARRAY[index1].is_initialized = true;
+    //printf("evaluating,counter=%d",enum_counter);
+    strcpy(ARRAY[index_ok].name,element.name);
+    ARRAY[index_ok].integer_value=enum_counter++;
+    ARRAY[index_ok].set_type = INTEGER;
+    ARRAY[index_ok].is_initialized = true;
+    printf("LD %s,%d\n",result_name,ARRAY[index_ok].integer_value);
+    printf("ST %s,%s\n",element.name,result_name);
+    index_ok++;
 
 }
 void restart_enum_counter()
