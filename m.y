@@ -78,6 +78,10 @@ char result_name[3] = {'t','0','\0'};
 int lbl=0;
 int lbl1,lbl2=0;
 
+int enum_counter=0;
+
+void evaluate_enum_element(string element);
+void restart_enum_counter();
 struct Obj OPER(struct Obj expr1, char operators, struct Obj expr2);
 void print_quadruples();
 struct Obj VALUE_OF_VAR(struct Obj n);
@@ -274,9 +278,9 @@ LOOPSTATEMENT : LOOPSTATEMENT LOOPSTATEMENT
               | statements 
               | BREAK
               ;
-ENUMSTATEMENT : ENUM VARIABLE OPENCURLY ENUMLIST CLOSEDCURLY 
-ENUMLIST      : VARIABLE
-                | ENUMLIST COMMA VARIABLE
+ENUMSTATEMENT : ENUM VARIABLE OPENCURLY ENUMLIST CLOSEDCURLY {restart_enum_counter();}
+ENUMLIST      : VARIABLE {evaluate_enum_element($1);}
+                | ENUMLIST COMMA VARIABLE {evaluate_enum_element($3);}
 
 
 
@@ -391,6 +395,21 @@ struct Obj OPER(struct Obj in1, char operators, struct Obj in2) {
     }
     q_index++;
     return result;
+}
+
+void evaluate_enum_element(string element)
+{
+    //add to symbol table, value=enum_counter
+    printf("evaluating,counter=%d",enum_counter);
+    ARRAY[index1].name=element;
+    ARRAY[index1].value=enum_counter++;
+    //ARRAY[index1].set_type = int;
+    ARRAY[index1].is_initialized = true;
+
+}
+void restart_enum_counter()
+{
+    enum_counter=0;
 }
 
 int CHECK_DECLARATION(struct Obj coming) { //return index of object in symbol table
