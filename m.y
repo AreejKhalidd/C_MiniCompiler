@@ -41,7 +41,7 @@ void push(struct Stack* stack, int item)
     if (isFull(stack))
         return;
     stack->array[++stack->top] = item;
-    printf("%d pushed to stack\n", item);
+    //printf("%d pushed to stack\n", item);
 }
  
 // Function to remove an item from stack.  It decreases top by 1
@@ -69,6 +69,94 @@ int peek(struct Stack* stack)
 
 
 
+
+///////////////////////////////////////////////////////////////////////////////
+// A structure to represent a stack
+typedef struct strlist
+{
+        int size;
+        int pos;
+        char *list[1]; // Actually ends up being larger than one element because of malloc() size
+} strlist;
+
+#define STRLIST_MINSIZE 16
+#define STRLIST_FREE(X) (((X)->size)-((X)->pos))
+
+strlist *strlist_create(void)
+{
+        strlist *s=malloc(sizeof(strlist)+(sizeof(char *)*STRLIST_MINSIZE));
+        s->pos=0;
+        s->size=STRLIST_MINSIZE;
+        return(s);
+}
+
+strlist *strlist_resize(strlist *s)
+{
+        strlist *n=realloc(s, sizeof(strlist) +
+                (sizeof(char *)*(s->size<<1)));
+
+        if(n == NULL)
+                return(NULL);
+
+        n->size<<=1;
+
+        return(n);
+}
+
+void strlist_free(strlist *s)
+{
+        int n;
+        for(n=0; n<s->pos; n++)
+                free(s->list[n]);
+        free(s);
+}
+
+strlist *strlist_append(strlist *s, const char *str)
+{
+        if(STRLIST_FREE(s) <= 0)
+        {
+                strlist *n=strlist_resize(s);
+                if(n == NULL)
+                        return(NULL);
+                s=n;
+        }
+
+        s->list[s->pos++]=strdup(str);
+        return(s);
+}
+
+char *strlist_pop(strlist *s)
+{
+        if(s->pos <= 0) return(NULL);
+        return(s->list[--s->pos]);
+}
+ 
+///////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 char temp[3];
 void yyerror(char *);
 int yylex(void);
@@ -77,6 +165,7 @@ int q_index = 0;
 char result_name[3] = {'t','0','\0'};
 int lbl=0;
 int lbl1,lbl2=0;
+int lbl_function=0;
 
 struct Obj OPER(struct Obj expr1, char operators, struct Obj expr2);
 void print_quadruples();
@@ -92,6 +181,7 @@ void label();
 void label2();
 void label3();
 void initialize_stack(int type);
+void initialize_stack_void(int type);
 void get_variable_object(int type);
 void get_variable_object_type(struct Obj coming);
 bool FUNCTION_DECLARATION(int type, struct Obj coming) ;
@@ -134,6 +224,7 @@ bool check_return_type_void();
 }Quadruples[30];
 
 struct Stack* parameters;
+struct strlist* param_names;
 int no_parameters;
 int function_type;
 bool returned;
@@ -212,7 +303,7 @@ functionstatements functionstatements
 // printing an immediate value
 statement:
  PRINT expr { VARIABLE_PRINT($2);}
-|typeIdentifier VARIABLE EQU expr { VARIABLE_INITIALIZATION($1, $2, $4); printf("\n\n"); print_quadruples();} 
+|typeIdentifier VARIABLE EQU expr { VARIABLE_INITIALIZATION($1, $2, $4); printf("\n\n"); } 
 | VARIABLE EQU expr { SET_VALUE_OF_VAR($1,$3); printf("\n\n");}
 | typeIdentifier VARIABLE { VARIABLE_DECLARATION($1, $2);}
 | expr
@@ -223,7 +314,7 @@ statement:
 | IFELSE  {printf("if else accepted .\n");}
 | ENUMSTATEMENT {printf("ENUM accepted .\n");}
 | FUNCTCALL
-| typeIdentifier VARIABLE EQU FUNCTCALL { VARIABLE_INITIALIZATION($1, $2, $4); printf("\n\n"); print_quadruples();}
+| typeIdentifier VARIABLE EQU FUNCTCALL { VARIABLE_INITIALIZATION($1, $2, $4); printf("\n\n"); }
 | VARIABLE EQU FUNCTCALL { SET_VALUE_OF_VAR($1,$3); printf("\n\n");}
 ;
 
@@ -235,15 +326,16 @@ BOOL2
 | STR 
 ;
 
-FUNCT  :  typeIdentifier VARIABLE  {initialize_stack($1);}  OPENROUND parameters CLOSEDROUND OPENCURLY functionstatements  CLOSEDCURLY{initialize_function($1,$2);}|
-          VOID VARIABLE {initialize_stack($1);returned=true;} OPENROUND parameters CLOSEDROUND OPENCURLY functionstatements CLOSEDCURLY{initialize_function(VOID,$2);};
+FUNCT  :  typeIdentifier VARIABLE  {initialize_stack($1);}  OPENROUND parameters CLOSEDROUND OPENCURLY{printf("L%03d:\n", lbl);lbl_function=lbl++;} functionstatements  CLOSEDCURLY{initialize_function($1,$2);}|
+          VOID VARIABLE {initialize_stack_void($1);} OPENROUND parameters CLOSEDROUND OPENCURLY {printf("L%03d:\n",lbl);lbl_function=lbl++} functionstatements {printf("pop %s\n",result_name);printf("JMP %s\n",result_name);} CLOSEDCURLY{initialize_function(VOID,$2);};
 
-FUNCTCALL : VARIABLE OPENROUND {initialize_stack(1);} DeclaredParameters CLOSEDROUND{get_function($1)};
-DeclaredParameters:VARIABLE{get_variable_object_type($1)}
-| DeclaredParameters COMMA VARIABLE{get_variable_object_type($3)};
+FUNCTCALL : VARIABLE OPENROUND {initialize_stack_void(1);} DeclaredParameters CLOSEDROUND{$$=get_function($1)};
+DeclaredParameters:expr{get_variable_object_type($1)}
+| DeclaredParameters COMMA expr{get_variable_object_type($3)};
 
 parameters : typeIdentifier VARIABLE{DECLARATION_function($1, $2); get_variable_object($1);}
 | parameters COMMA typeIdentifier VARIABLE{DECLARATION_function($3, $4); get_variable_object($3); };
+|;
 ST     :    SWITCH OPENROUND VARIABLE CLOSEDROUND OPENCURLY B CLOSEDCURLY
          ;
    
@@ -394,14 +486,12 @@ struct Obj OPER(struct Obj in1, char operators, struct Obj in2) {
 }
 
 int CHECK_DECLARATION(struct Obj coming) { //return index of object in symbol table
-    printf("nameeeeeeeeeeeeeeeeee %s",coming.name);
 
      for(int index1 = 0 ; index1 < index_ok; index1++) {
         if(strcmp(ARRAY[index1].name, coming.name) == 0) {
             return index1;
         }
     }
-    printf("heeeeeeeeeeeeeeeeeeeeh\n");
     return -1;
 }
 
@@ -446,6 +536,10 @@ int check=CHECK_DECLARATION(coming);
     if (check == -1) { //so declare it
         ARRAY[index_ok].set_type = type; strcpy(ARRAY[index_ok].name, coming.name);
         ARRAY[index_ok].is_initialized = true;
+        printf("pop %s\n",result_name);
+        printf("store %s,%s\n",ARRAY[index_ok].name,result_name);
+        //strcpy(ARRAY[index_ok].registerName,result_name);
+        //result_name[1]++;
         index_ok++;
         return true;
     }
@@ -472,7 +566,6 @@ int check=CHECK_DECLARATION(coming);
 void VARIABLE_PRINT(struct Obj in) {
 
     int check = CHECK_DECLARATION(in);
-    printf("check %d",check);
     //{ //is not  declared
        //         printf("%s %d",in.name,check);
      //           yyerror("Variable is  undeclared!");
@@ -587,7 +680,6 @@ void label(){
 printf("L%03d:\n", lbl1 = lbl++);
 }
 void label2(){
-printf("leeeh\n");
 printf("jz\tL%03d\n", lbl2 = lbl++);
 }
 void label3(){
@@ -601,7 +693,11 @@ void get_variable_object(int type){
 
 void get_variable_object_type(struct Obj coming){
         int index=CHECK_DECLARATION(coming);
-        push(parameters, ARRAY[index].set_type);
+        printf("push %s\n",coming.registerName);
+        if(index!=-1){
+            push(parameters, ARRAY[index].set_type);
+            }
+        else push(parameters, coming.set_type);
         //printf("da5al %d",coming.set_type);
         no_parameters++;
 }
@@ -609,36 +705,37 @@ void get_variable_object_type(struct Obj coming){
 void initialize_stack(int type){
     no_parameters=0;
     parameters=createStack(100);
+    param_names=strlist_create();
     returned=false;
     function_type=type;
 }
-
+void initialize_stack_void(int type){
+    returned=true;
+    no_parameters=0;
+    parameters=createStack(100);
+    function_type=type;
+}
 void initialize_function(int type, struct Obj in) { //heena byhsal feeha el two function el ablha 3latouul
-  if(!returned) yyerror("The funstion has no return");
+  if(!returned) yyerror("The function has no return");
   FUNCTION_DECLARATION(type, in);
 }
 
 bool FUNCTION_DECLARATION(int type, struct Obj coming) { //awel may3rf variable ok m3aia
 int check=CHECK_DECLARATION(coming);
-printf("111111111111111\n");
     if(check != -1){yyerror("Function already declared!"); //already declared
     return false;
     }
-printf("222222222222222222222\n");
     if (check == -1) { //so declare it
         ARRAY[index_ok].set_type = type; strcpy(ARRAY[index_ok].name, coming.name);
         ARRAY[index_ok].is_initialized = false;
-        ARRAY[index_ok].label=lbl++;
+        ARRAY[index_ok].label=lbl_function;
         ARRAY[index_ok].is_function=true;
         int i=no_parameters-1;
-        printf("333333333333333333333333333\n");
         while(!isEmpty(parameters)){
             int x=pop(parameters);
             ARRAY[index_ok].parameters[i]=x;
             i--;
-            printf("looop\n");
          }
-         printf("444444444444444444444\n");
         ARRAY[index_ok].no_arguments=no_parameters;
         index_ok++;
         return true;
@@ -666,16 +763,24 @@ struct Obj get_function(struct Obj var){
     }
     result.set_type = ARRAY[index].set_type;
     result.is_initialized = true;
+    printf("L%03d:\n", lbl);
+    printf("LOAD %s ,L%03d:\n", result_name,lbl);
+    printf("push %s\n",result_name);
+    printf("JMP L%03d\n",ARRAY[index].label);
+    printf("pop %s\n",result_name);
+    strcpy(result.registerName,result_name);
     return result;
 }
 bool check_return_type(struct Obj var){
-printf("variable %d",var.set_type);
-printf("function_type %d",function_type);
 if(var.set_type!=function_type)yyerror("return type is wrong\n");
-else returned=true;
+else {
+    returned=true;
+    printf("pop %s\n",result_name);
+    printf("push %s\n",var.registerName);
+    printf("JMP %s\n",result_name);
+    }
 }
 bool check_return_type_void(){
-printf("function_type %d",function_type);
 if(VOID!=function_type)yyerror("return type is wrong\n");
 else returned=true;
 }
