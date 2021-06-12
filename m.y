@@ -83,6 +83,7 @@ void print_quadruples();
 struct Obj VALUE_OF_VAR(struct Obj n);
 int CHECK_DECLARATION(struct Obj coming);
 bool VARIABLE_DECLARATION(int type, struct Obj coming);
+bool DECLARATION_function(int type, struct Obj coming);
 void SET_VALUE_OF_VAR(struct Obj in, struct Obj expr);
 void VARIABLE_INITIALIZATION(int type, struct Obj in, struct Obj expr);
 void VARIABLE_PRINT(struct Obj in);
@@ -98,6 +99,7 @@ void initialize_function(int type, struct Obj in);
 struct Obj get_function(struct Obj var);
 void get_variable_object_type(struct Obj coming);
 bool check_return_type(struct Obj var);
+bool check_return_type_void();
 
 
 %} 
@@ -146,10 +148,10 @@ char sValue[100];
 
 
 
-%token <Value_Int> INT CHAR STR FLOUT PRINT BOOL2
+%token <Value_Int> INT CHAR STR FLOUT PRINT BOOL2 VOID
 %token <Value_char> PLUS MINUS MULT DIV EQU 
 %token <Object> INTEGER STRING FLOAT CHARACTER VARIABLE BOOL 
-%token SWITCH CASE BREAK DEFAULT OPENROUND CLOSEDROUND OPENCURLY CLOSEDCURLY COLON L G LE GE NE EQ FOR OR AND INC DEC SEMICOLON WHILE REPEAT UNTIL IF ELSE VOID COMMA ENUM RETURN
+%token SWITCH CASE BREAK DEFAULT OPENROUND CLOSEDROUND OPENCURLY CLOSEDCURLY COLON L G LE GE NE EQ FOR OR AND INC DEC SEMICOLON WHILE REPEAT UNTIL IF ELSE COMMA ENUM RETURN
 
 %left  MINUS PLUS
 %left  MULT DIV
@@ -157,8 +159,13 @@ char sValue[100];
 %type <Value_Int> typeIdentifier 
 %%
 pro:
-pro statement '\n'
+pro statmentorfunction '\n'
 |
+;
+
+statmentorfunction:
+statement|
+| FUNCT {printf("functionnn accepted .\n");}
 ;
 
 
@@ -200,7 +207,7 @@ functionstatements:
 functionstatements functionstatements
 | statements
 | RETURN expr{check_return_type($2);}
-| RETURN
+| RETURN {check_return_type_void();}
 ;
 // printing an immediate value
 statement:
@@ -214,7 +221,6 @@ statement:
 | WL {printf("while Loop accepted .\n");}
 | RPTUNTL {printf("repeat until loop accepted .\n");}
 | IFELSE  {printf("if else accepted .\n");}
-| FUNCT {printf("functionnn accepted .\n");}
 | ENUMSTATEMENT {printf("ENUM accepted .\n");}
 | FUNCTCALL
 | typeIdentifier VARIABLE EQU FUNCTCALL { VARIABLE_INITIALIZATION($1, $2, $4); printf("\n\n"); print_quadruples();}
@@ -230,14 +236,14 @@ BOOL2
 ;
 
 FUNCT  :  typeIdentifier VARIABLE  {initialize_stack($1);}  OPENROUND parameters CLOSEDROUND OPENCURLY functionstatements  CLOSEDCURLY{initialize_function($1,$2);}|
-          VOID VARIABLE OPENROUND  CLOSEDROUND OPENCURLY  CLOSEDCURLY;
+          VOID VARIABLE {initialize_stack($1);returned=true;} OPENROUND parameters CLOSEDROUND OPENCURLY functionstatements CLOSEDCURLY{initialize_function(VOID,$2);};
 
 FUNCTCALL : VARIABLE OPENROUND {initialize_stack(1);} DeclaredParameters CLOSEDROUND{get_function($1)};
 DeclaredParameters:VARIABLE{get_variable_object_type($1)}
 | DeclaredParameters COMMA VARIABLE{get_variable_object_type($3)};
 
-parameters : typeIdentifier VARIABLE{VARIABLE_DECLARATION($1, $2); get_variable_object($1);}
-| parameters COMMA typeIdentifier VARIABLE{VARIABLE_DECLARATION($3, $4); get_variable_object($3); };
+parameters : typeIdentifier VARIABLE{DECLARATION_function($1, $2); get_variable_object($1);}
+| parameters COMMA typeIdentifier VARIABLE{DECLARATION_function($3, $4); get_variable_object($3); };
 ST     :    SWITCH OPENROUND VARIABLE CLOSEDROUND OPENCURLY B CLOSEDCURLY
          ;
    
@@ -261,7 +267,6 @@ IFELSE   : IFF |
            ;
 IFF : IF OPENROUND condtionalstatement CLOSEDROUND OPENCURLY statements CLOSEDCURLY;
 IFFELSE : IFF ELSE OPENCURLY statements CLOSEDCURLY
-
 RPTUNTL  : REPEAT DEF UNTIL OPENROUND condtionalstatement CLOSEDROUND
 
 DEF    : OPENCURLY LOOPSTATEMENT CLOSEDCURLY
@@ -389,12 +394,14 @@ struct Obj OPER(struct Obj in1, char operators, struct Obj in2) {
 }
 
 int CHECK_DECLARATION(struct Obj coming) { //return index of object in symbol table
+    printf("nameeeeeeeeeeeeeeeeee %s",coming.name);
 
      for(int index1 = 0 ; index1 < index_ok; index1++) {
         if(strcmp(ARRAY[index1].name, coming.name) == 0) {
             return index1;
         }
     }
+    printf("heeeeeeeeeeeeeeeeeeeeh\n");
     return -1;
 }
 
@@ -429,14 +436,29 @@ struct Obj VALUE_OF_VAR(struct Obj n) { //yegeb variable already mawgood
     //q_index++;
     return value;
 }
-
-bool VARIABLE_DECLARATION(int type, struct Obj coming) { //awel may3rf variable ok m3aia
+bool DECLARATION_function(int type, struct Obj coming) { //awel may3rf variable ok m3aia
 
 int check=CHECK_DECLARATION(coming);
     if(check != -1){yyerror("Variable already declared!"); //already declared
     return false;
     }
 
+    if (check == -1) { //so declare it
+        ARRAY[index_ok].set_type = type; strcpy(ARRAY[index_ok].name, coming.name);
+        ARRAY[index_ok].is_initialized = true;
+        index_ok++;
+        return true;
+    }
+    
+    return false;
+}
+bool VARIABLE_DECLARATION(int type, struct Obj coming) { //awel may3rf variable ok m3aia
+
+int check=CHECK_DECLARATION(coming);
+    if(check != -1){yyerror("Variable already declared!"); //already declared
+    return false;
+    }
+    
     if (check == -1) { //so declare it
         ARRAY[index_ok].set_type = type; strcpy(ARRAY[index_ok].name, coming.name);
         ARRAY[index_ok].is_initialized = false;
@@ -450,10 +472,13 @@ int check=CHECK_DECLARATION(coming);
 void VARIABLE_PRINT(struct Obj in) {
 
     int check = CHECK_DECLARATION(in);
-    if(strlen(in.name)!=0&&check == -1) { //is not  declared
-                yyerror("Variable is  undeclared!");
-    }
-    else 
+    printf("check %d",check);
+    //{ //is not  declared
+       //         printf("%s %d",in.name,check);
+     //           yyerror("Variable is  undeclared!");
+   // }
+    //else 
+    if(check != -1||strlen(in.name)==0) 
     {
        if(strlen(in.name)!=0&&!ARRAY[check].is_initialized) { //is not initialized
              yyerror("variable is uninitialized!");
@@ -595,21 +620,25 @@ void initialize_function(int type, struct Obj in) { //heena byhsal feeha el two 
 
 bool FUNCTION_DECLARATION(int type, struct Obj coming) { //awel may3rf variable ok m3aia
 int check=CHECK_DECLARATION(coming);
+printf("111111111111111\n");
     if(check != -1){yyerror("Function already declared!"); //already declared
     return false;
     }
-
+printf("222222222222222222222\n");
     if (check == -1) { //so declare it
         ARRAY[index_ok].set_type = type; strcpy(ARRAY[index_ok].name, coming.name);
         ARRAY[index_ok].is_initialized = false;
         ARRAY[index_ok].label=lbl++;
         ARRAY[index_ok].is_function=true;
         int i=no_parameters-1;
+        printf("333333333333333333333333333\n");
         while(!isEmpty(parameters)){
             int x=pop(parameters);
             ARRAY[index_ok].parameters[i]=x;
             i--;
+            printf("looop\n");
          }
+         printf("444444444444444444444\n");
         ARRAY[index_ok].no_arguments=no_parameters;
         index_ok++;
         return true;
@@ -643,5 +672,10 @@ bool check_return_type(struct Obj var){
 printf("variable %d",var.set_type);
 printf("function_type %d",function_type);
 if(var.set_type!=function_type)yyerror("return type is wrong\n");
+else returned=true;
+}
+bool check_return_type_void(){
+printf("function_type %d",function_type);
+if(VOID!=function_type)yyerror("return type is wrong\n");
 else returned=true;
 }
