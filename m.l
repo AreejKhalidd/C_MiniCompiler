@@ -1,4 +1,4 @@
-character [A-Za-z]
+character [A-Za-z_]
 num [0-9]
 t   (true|false)
 %{
@@ -103,7 +103,7 @@ yylval.Object.integer_value = atoi(yytext);
             return STRING;}
             
 
-[\n] { return *yytext; }
+[ \n\t\r]+ ;
 
 [=] { yylval.Value_char = yytext[0]; 
 return EQU;}
@@ -115,7 +115,6 @@ return PLUS;}
 return MULT;}
 [/] { yylval.Value_char = yytext[0]; 
 return DIV;}
-[ \t] ;
 
 . yyerror("invalid character");
 %%

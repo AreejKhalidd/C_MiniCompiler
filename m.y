@@ -256,13 +256,14 @@ char sValue[100];
 %type <Value_Int> typeIdentifier 
 %%
 pro:
-pro statmentorfunction '\n'
+pro statmentorfunction
 |
 ;
 
 statmentorfunction:
-statement|
-| FUNCT {printf("functionnn accepted .\n");}
+| statement statmentorfunction
+| FUNCT statmentorfunction {printf("functionnn accepted .\n");}
+|
 ;
 
 
@@ -385,7 +386,7 @@ void yyerror(char *s) {
 
 int main(int argc, char *argv[]) {
     extern FILE *yyin;
-    yyin = fopen(argv[1], "r");
+    yyin = fopen("enums.cpp", "r");
     yyparse();
     fclose(yyin);
     return 0;
