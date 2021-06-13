@@ -185,6 +185,11 @@ struct Obj put_in_temp(struct Obj n);
 void label();
 void label2();
 void label3();
+void labelIf();
+void labelElse();
+void labelIf2();
+void labelif22();
+void labelRpt();
 void initialize_stack(int type);
 void initialize_stack_void(int type);
 void get_variable_object(int type,struct Obj coming);
@@ -362,12 +367,12 @@ D      :    DEFAULT    COLON statement
     
 WL  :  WHILE {label();} OPENROUND condtionalstatement CLOSEDROUND{label2();} DEF{label3();}
 FR       : FOR  OPENROUND statement SEMICOLON condtionalstatement SEMICOLON statement CLOSEDROUND DEF ;
-IFELSE   : IFF |
+IFELSE   : IFF {labelIf2();} |
            IFFELSE
            ;
-IFF : IF OPENROUND condtionalstatement CLOSEDROUND OPENCURLY statements CLOSEDCURLY;
-IFFELSE : IFF ELSE OPENCURLY statements CLOSEDCURLY
-RPTUNTL  : REPEAT DEF UNTIL OPENROUND condtionalstatement CLOSEDROUND
+IFF : IF OPENROUND condtionalstatement CLOSEDROUND {labelIf();}OPENCURLY statements CLOSEDCURLY;
+IFFELSE : IFF ELSE {labelElse();labelIf2();}OPENCURLY statements CLOSEDCURLY{labelif22();}
+RPTUNTL  : REPEAT {label();}DEF UNTIL OPENROUND condtionalstatement {label2();} CLOSEDROUND {label3();}
 
 DEF    : OPENCURLY LOOPSTATEMENT CLOSEDCURLY
 LOOPSTATEMENT : LOOPSTATEMENT LOOPSTATEMENT 
@@ -739,13 +744,14 @@ struct Obj put_in_temp(struct Obj n) {
     //printf("LD R2,%s\n",Quadruples[q_index].arg2);
     return value;
 }
+//Labels
 void label(){
 printf("L%03d:\n", lbl1 = lbl);
 fprintf(quadruples_file,"L%03d:\n", lbl1 = lbl++);
 }
 void label2(){
-printf("jz\tL%03d\n", lbl2 = lbl);
-fprintf(quadruples_file,"jz\tL%03d\n", lbl2 = lbl++);
+printf("jnz\tL%03d\n", lbl2 = lbl);
+fprintf(quadruples_file,"jnz\tL%03d\n", lbl2 = lbl++);
 }
 void label3(){
     printf("jmp\tL%03d\n", lbl1); 
@@ -753,6 +759,30 @@ void label3(){
     printf("L%03d:\n", lbl2); 
     fprintf(quadruples_file,"L%03d:\n", lbl2); 
 }
+void labelIf(){
+printf("jnz\tL%03d\n", lbl2 = lbl);
+fprintf(quadruples_file,"jnz\tL%03d\n", lbl2 = lbl++);
+}
+void labelElse(){
+printf("jmp\tL%03d\n", lbl2 = lbl);
+fprintf(quadruples_file,"jmp\tL%03d\n", lbl2 = lbl++);
+}
+void labelIf2(){
+ printf("L%03d:\n", lbl2-1);
+fprintf(quadruples_file,"L%03d:\n", lbl2-1);
+}
+void labelif22(){
+printf("L%03d:\n", lbl2);
+fprintf(quadruples_file,"L%03d:\n", lbl2);
+}
+/*void labelRpt1(){
+     printf("L%03d:\n", lbl2-1);
+fprintf(quadruples_file,"L%03d:\n", lbl2-1);
+}
+void labelRpt2(){
+    printf("jnz\tL%03d\n", lbl2 = lbl);
+fprintf(quadruples_file,"jnz\tL%03d\n", lbl2 = lbl++);
+}*/
 
 void get_variable_object(int type,struct Obj coming){
         push(parameters, type);
