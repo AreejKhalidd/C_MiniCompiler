@@ -189,6 +189,7 @@ void labelIf();
 void labelElse();
 void labelIf2();
 void labelif22();
+void labelRpt();
 void initialize_stack(int type);
 void initialize_stack_void(int type);
 void get_variable_object(int type,struct Obj coming);
@@ -370,7 +371,7 @@ IFELSE   : IFF {labelIf2();} |
            ;
 IFF : IF OPENROUND condtionalstatement CLOSEDROUND {labelIf();}OPENCURLY statements CLOSEDCURLY;
 IFFELSE : IFF ELSE {labelElse();labelIf2();}OPENCURLY statements CLOSEDCURLY{labelif22();}
-RPTUNTL  : REPEAT DEF UNTIL OPENROUND condtionalstatement CLOSEDROUND
+RPTUNTL  : REPEAT {label();}DEF UNTIL OPENROUND condtionalstatement {label2();} CLOSEDROUND {label3();}
 
 DEF    : OPENCURLY LOOPSTATEMENT CLOSEDCURLY
 LOOPSTATEMENT : LOOPSTATEMENT LOOPSTATEMENT 
@@ -760,6 +761,14 @@ void labelif22(){
 printf("L%03d:\n", lbl2);
 fprintf(quadruples_file,"L%03d:\n", lbl2);
 }
+/*void labelRpt1(){
+     printf("L%03d:\n", lbl2-1);
+fprintf(quadruples_file,"L%03d:\n", lbl2-1);
+}
+void labelRpt2(){
+    printf("jnz\tL%03d\n", lbl2 = lbl);
+fprintf(quadruples_file,"jnz\tL%03d\n", lbl2 = lbl++);
+}*/
 
 void get_variable_object(int type,struct Obj coming){
         push(parameters, type);
