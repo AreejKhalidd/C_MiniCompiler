@@ -104,7 +104,6 @@ yylval.Object.integer_value = atoi(yytext);
             
 
 [ \n\t\r]+ ;
-
 [=] { yylval.Value_char = yytext[0]; 
 return EQU;}
 [-] { yylval.Value_char = yytext[0]; 

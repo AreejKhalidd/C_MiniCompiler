@@ -228,7 +228,7 @@ void evaluate_enum_element(struct Obj element);
     char arg2[10];
     char result[10];
 }Quadruples[30];
-
+FILE * quadruples_file;
 struct Stack* parameters;
 struct strlist* param_names;
 int no_parameters;
@@ -333,8 +333,8 @@ BOOL2
 | STR 
 ;
 
-FUNCT  :  typeIdentifier VARIABLE  {initialize_stack($1);}  OPENROUND parameters CLOSEDROUND OPENCURLY{printf("L%03d:\n", lbl);lbl_function=lbl++;printf("pop %s\n",address_register_name);pop_paramters();} functionstatements  CLOSEDCURLY{initialize_function($1,$2);}|
-          VOID VARIABLE {initialize_stack_void($1);} OPENROUND parameters CLOSEDROUND OPENCURLY {printf("L%03d:\n",lbl);lbl_function=lbl++} functionstatements {printf("pop %s\n",result_name);printf("JMP %s\n",result_name);} CLOSEDCURLY{initialize_function(VOID,$2);};
+FUNCT  :  typeIdentifier VARIABLE  {initialize_stack($1);}  OPENROUND parameters CLOSEDROUND OPENCURLY{printf("L%03d:\n", lbl);fprintf(quadruples_file,"L%03d:\n", lbl);lbl_function=lbl++;printf("pop %s\n",address_register_name);fprintf(quadruples_file,"pop %s\n",address_register_name);pop_paramters();} functionstatements  CLOSEDCURLY{initialize_function($1,$2);}|
+          VOID VARIABLE {initialize_stack_void($1);} OPENROUND parameters CLOSEDROUND OPENCURLY {printf("L%03d:\n",lbl);fprintf(quadruples_file,"L%03d:\n",lbl);lbl_function=lbl++} functionstatements {printf("pop %s\n",result_name);fprintf(quadruples_file,"pop %s\n",result_name);printf("JMP %s\n",result_name);fprintf(quadruples_file,"JMP %s\n",result_name);} CLOSEDCURLY{initialize_function(VOID,$2);};
 
 FUNCTCALL : VARIABLE OPENROUND {initialize_stack_void(1);} DeclaredParameters CLOSEDROUND{$$=get_function($1)};
 DeclaredParameters:expr{get_variable_object_type($1)}
@@ -386,9 +386,11 @@ void yyerror(char *s) {
 
 int main(int argc, char *argv[]) {
     extern FILE *yyin;
-    yyin = fopen("enums.cpp", "r");
+    yyin = fopen("function.cpp", "r");
+    quadruples_file=fopen("quadruples.txt", "w");
     yyparse();
     fclose(yyin);
+    fclose(quadruples_file);
     return 0;
 }
 
@@ -452,40 +454,60 @@ struct Obj OPER(struct Obj in1, char operators, struct Obj in2) {
     strcpy(Quadruples[q_index].result, result_name);
     strcpy(result.registerName,result_name);
     result_name[1]++;
-    if(operators=='-') printf("sub %s,%s,%s\n",Quadruples[q_index].result,in1.registerName,in2.registerName);
-    if(operators=='+') printf("Add %s,%s,%s\n",Quadruples[q_index].result,in1.registerName,in2.registerName);
-    if(operators=='*') printf("MUL %s,%s,%s\n",Quadruples[q_index].result,in1.registerName,in2.registerName);
-    if(operators=='/') printf("DIV %s,%s,%s\n",Quadruples[q_index].result,in1.registerName,in2.registerName);
+    if(operators=='-'){
+        printf("sub %s,%s,%s\n",Quadruples[q_index].result,in1.registerName,in2.registerName);
+        fprintf(quadruples_file,"sub %s,%s,%s\n",Quadruples[q_index].result,in1.registerName,in2.registerName);
+    }
+    if(operators=='+') {
+        printf("Add %s,%s,%s\n",Quadruples[q_index].result,in1.registerName,in2.registerName);
+        fprintf(quadruples_file,"Add %s,%s,%s\n",Quadruples[q_index].result,in1.registerName,in2.registerName);
+        }
+    if(operators=='*') {
+        printf("MUL %s,%s,%s\n",Quadruples[q_index].result,in1.registerName,in2.registerName);
+        fprintf(quadruples_file,"MUL %s,%s,%s\n",Quadruples[q_index].result,in1.registerName,in2.registerName);
+        }
+    if(operators=='/') {
+        printf("DIV %s,%s,%s\n",Quadruples[q_index].result,in1.registerName,in2.registerName);
+        fprintf(quadruples_file,"DIV %s,%s,%s\n",Quadruples[q_index].result,in1.registerName,in2.registerName);
+        }
     if(operators=='c') {
         printf("compEQ %s,%s\n",in1.registerName,in2.registerName);
+        fprintf(quadruples_file,"compEQ %s,%s\n",in1.registerName,in2.registerName);
         result_name[1]='0';
         }
     if(operators=='>') {
         printf("compGT %s,%s\n",in1.registerName,in2.registerName);
+        fprintf(quadruples_file,"compGT %s,%s\n",in1.registerName,in2.registerName);
         result_name[1]='0';
         }
     if(operators=='<') {
         printf("compLT %s,%s\n",in1.registerName,in2.registerName);
+        fprintf(quadruples_file,"compLT %s,%s\n",in1.registerName,in2.registerName);
         result_name[1]='0';
     }
     if(operators=='!') {
         printf("compNE %s,%s\n",in1.registerName,in2.registerName);
+        fprintf(quadruples_file,"compNE %s,%s\n",in1.registerName,in2.registerName);
         result_name[1]='0';
     }
     if(operators=='&') {
         printf("AND %s,%s\n",in1.registerName,in2.registerName);
+        fprintf(quadruples_file,"AND %s,%s\n",in1.registerName,in2.registerName);
         result_name[1]='0';
     }
     if(operators=='|') {
         printf("OR %s,%s\n",in1.registerName,in2.registerName);
+        fprintf(quadruples_file,"OR %s,%s\n",in1.registerName,in2.registerName);
         result_name[1]='0';
     }
     if(operators=='g') {
         printf("compGE %s,%s\n",in1.registerName,in2.registerName);
+        fprintf(quadruples_file,"compGE %s,%s\n",in1.registerName,in2.registerName);
         result_name[1]='0';
     }
     if(operators=='l') {
         printf("compLE %s,%s\n",in1.registerName,in2.registerName);
+        fprintf(quadruples_file,"compLE %s,%s\n",in1.registerName,in2.registerName);
         result_name[1]='0';
     }
     q_index++;
@@ -501,7 +523,9 @@ void evaluate_enum_element(struct Obj element)
     ARRAY[index_ok].set_type = INTEGER;
     ARRAY[index_ok].is_initialized = true;
     printf("LD %s,%d\n",result_name,ARRAY[index_ok].integer_value);
+    fprintf(quadruples_file,"LD %s,%d\n",result_name,ARRAY[index_ok].integer_value);
     printf("ST %s,%s\n",element.name,result_name);
+    fprintf(quadruples_file,"ST %s,%s\n",element.name,result_name);
     index_ok++;
 
 }
@@ -543,7 +567,7 @@ struct Obj VALUE_OF_VAR(struct Obj n) { //yegeb variable already mawgood
             strcpy(value2.registerName,result_name);
             result_name[1]++;
             printf("LD %s,%s\n",Quadruples[q_index].result,n.name);
-
+            fprintf(quadruples_file,"LD %s,%s\n",Quadruples[q_index].result,n.name);
             q_index++;
            return  value2;
         }
@@ -655,7 +679,8 @@ if(check==-1){
                 Quadruples[q_index].op = '=';
                 strcpy(Quadruples[q_index].arg2,tempLocal);
                 strcpy(Quadruples[q_index].result,in.name);
-                printf("ST %s,%s",Quadruples[q_index].result,expr.registerName);
+                printf("ST %s,%s\n",Quadruples[q_index].result,expr.registerName);
+                fprintf(quadruples_file,"ST %s,%s\n",Quadruples[q_index].result,expr.registerName);
                 result_name[1]='0';
                 q_index++;
 
@@ -696,17 +721,23 @@ struct Obj put_in_temp(struct Obj n) {
     result_name[1]++;
     //printf("%d",n.integer_value);
     printf("LD %s,%d\n",value.registerName,value.integer_value);
+    fprintf(quadruples_file,"LD %s,%d\n",value.registerName,value.integer_value);
     //printf("LD R2,%s\n",Quadruples[q_index].arg2);
     return value;
 }
 void label(){
-printf("L%03d:\n", lbl1 = lbl++);
+printf("L%03d:\n", lbl1 = lbl);
+fprintf(quadruples_file,"L%03d:\n", lbl1 = lbl++);
 }
 void label2(){
-printf("jz\tL%03d\n", lbl2 = lbl++);
+printf("jz\tL%03d\n", lbl2 = lbl);
+fprintf(quadruples_file,"jz\tL%03d\n", lbl2 = lbl++);
 }
 void label3(){
-    printf("jmp\tL%03d\n", lbl1); printf("L%03d:\n", lbl2); 
+    printf("jmp\tL%03d\n", lbl1); 
+    fprintf(quadruples_file,"jmp\tL%03d\n", lbl1); 
+    printf("L%03d:\n", lbl2); 
+    fprintf(quadruples_file,"L%03d:\n", lbl2); 
 }
 
 void get_variable_object(int type,struct Obj coming){
@@ -718,6 +749,7 @@ void get_variable_object(int type,struct Obj coming){
 void get_variable_object_type(struct Obj coming){
         int index=CHECK_DECLARATION(coming);
         printf("push %s\n",coming.registerName);
+        fprintf(quadruples_file,"push %s\n",coming.registerName);
         if(index!=-1){
             push(parameters, ARRAY[index].set_type);
             }
@@ -787,11 +819,16 @@ struct Obj get_function(struct Obj var){
     }
     result.set_type = ARRAY[index].set_type;
     result.is_initialized = true;
-    printf("LD %s ,L%03d:\n", result_name,lbl);
+    printf("LD %s ,L%03d\n", result_name,lbl);
+    fprintf(quadruples_file,"LD %s ,L%03d\n", result_name,lbl);
     printf("push %s\n",result_name);
+    fprintf(quadruples_file,"push %s\n",result_name);
     printf("JMP L%03d\n",ARRAY[index].label);
-    printf("L%03d:\n", lbl++);
+    fprintf(quadruples_file,"JMP L%03d\n",ARRAY[index].label);
+    printf("L%03d:\n", lbl);
+    fprintf(quadruples_file,"L%03d:\n", lbl++);
     printf("pop %s\n",result_name);
+    fprintf(quadruples_file,"pop %s\n",result_name);
     strcpy(result.registerName,result_name);
     return result;
 }
@@ -801,7 +838,9 @@ else {
     returned=true;
     //printf("pop %s\n",result_name);
     printf("push %s\n",var.registerName);
+    fprintf(quadruples_file,"push %s\n",var.registerName);
     printf("JMP %s\n",address_register_name);
+    fprintf(quadruples_file,"JMP %s\n",address_register_name);
     }
 }
 bool check_return_type_void(){
@@ -813,7 +852,9 @@ void pop_paramters(){
     param_name=strlist_pop(param_names);
     while(param_name){
         printf("pop %s\n",result_name);
+        fprintf(quadruples_file,"pop %s\n",result_name);
         printf("ST %s,%s\n",param_name,result_name);
+        fprintf(quadruples_file,"ST %s,%s\n",param_name,result_name);
         param_name=strlist_pop(param_names);
     }
 }

@@ -3,3 +3,5 @@
 *.tab.c
 *.exe
 *.tab.h
+*.txt
+*.cpp
