@@ -229,6 +229,7 @@ void evaluate_enum_element(struct Obj element);
     char result[10];
 }Quadruples[30];
 FILE * quadruples_file;
+FILE * sementic_errors_file;
 struct Stack* parameters;
 struct strlist* param_names;
 int no_parameters;
@@ -380,14 +381,15 @@ ENUMLIST      : VARIABLE {evaluate_enum_element($1);}
 
 
 %%
-void yyerror(char *s) {
+/*void yyerror(char *s) {
     fprintf(stderr, "%s\n", s);
-}
+}*/
 
 int main(int argc, char *argv[]) {
     extern FILE *yyin;
-    yyin = fopen("function.cpp", "r");
+    yyin = fopen("test.cpp", "r");
     quadruples_file=fopen("quadruples.txt", "w");
+    sementic_errors_file=fopen("sementic_errors.txt", "w");
     yyparse();
     fclose(yyin);
     fclose(quadruples_file);
@@ -404,7 +406,8 @@ struct Obj OPER(struct Obj in1, char operators, struct Obj in2) {
     if(in1.is_initialized) { //lazim yet2kd en two expr have values
     if (in2.is_initialized){
         if(in1.set_type != in2.set_type) {
-        yyerror("Type mismatch\n");
+        //yyerror("Type mismatch\n");
+        fprintf(sementic_errors_file,"Type mismatch\n");
         }
         else {
 
@@ -441,7 +444,8 @@ struct Obj OPER(struct Obj in1, char operators, struct Obj in2) {
                 result.is_initialized = true;
             }
             else {
-                yyerror("Error in the operation\n");
+                //yyerror("Error in the operation\n");
+                fprintf(sementic_errors_file,"Error in the operation\n");
             }
 
         }
@@ -550,12 +554,14 @@ struct Obj VALUE_OF_VAR(struct Obj n) { //yegeb variable already mawgood
     value.is_initialized = false;
     if(check == -1) {
         printf("%s",n.name);
-    yyerror("the variable is undeclared");
+    //yyerror("the variable is undeclared");
+    fprintf(sementic_errors_file,"the variable is undeclared");
     }
     else 
     {
         if(!ARRAY[check].is_initialized) {
-          yyerror("Cannot use uninitialized variable");            
+          //yyerror("Cannot use uninitialized variable");   
+          fprintf(sementic_errors_file,"Cannot use uninitialized variable");         
         }
         else 
         {
@@ -578,7 +584,9 @@ struct Obj VALUE_OF_VAR(struct Obj n) { //yegeb variable already mawgood
 bool DECLARATION_function(int type, struct Obj coming) { //awel may3rf variable ok m3aia
 
 int check=CHECK_DECLARATION(coming);
-    if(check != -1){yyerror("Variable already declared!"); //already declared
+    if(check != -1){
+        //yyerror("Variable already declared!"); //already declared
+        fprintf(sementic_errors_file,"Variable already declared!");
     return false;
     }
 
@@ -596,7 +604,9 @@ int check=CHECK_DECLARATION(coming);
 bool VARIABLE_DECLARATION(int type, struct Obj coming) { //awel may3rf variable ok m3aia
 
 int check=CHECK_DECLARATION(coming);
-    if(check != -1){yyerror("Variable already declared!"); //already declared
+    if(check != -1){
+        //yyerror("Variable already declared!"); //already declared
+        fprintf(sementic_errors_file,"Variable already declared!");
     return false;
     }
     
@@ -621,7 +631,8 @@ void VARIABLE_PRINT(struct Obj in) {
     if(check != -1||strlen(in.name)==0) 
     {
        if(strlen(in.name)!=0&&!ARRAY[check].is_initialized) { //is not initialized
-             yyerror("variable is uninitialized!");
+             //yyerror("variable is uninitialized!");
+             fprintf(sementic_errors_file,"variable is uninitialized!");
         }
         else
         {
@@ -656,7 +667,8 @@ void SET_VALUE_OF_VAR(struct Obj in, struct Obj expr) { //intializatiooon
 
 int check = CHECK_DECLARATION(in);
 if(check==-1){
-    yyerror("The variable is undeclared, Sorry can't set it"); //can't declare x to this y value
+    //yyerror("The variable is undeclared, Sorry can't set it"); //can't declare x to this y value
+    fprintf(sementic_errors_file,"The variable is undeclared, Sorry can't set it"); //can't declare x to this y value
 }
       
     if (check != -1) {
@@ -688,7 +700,8 @@ if(check==-1){
 
             }
             else{
-               yyerror("Type mismatch"); 
+               //yyerror("Type mismatch"); 
+               fprintf(sementic_errors_file,"Type mismatch");
             }
         }
     }
@@ -697,7 +710,8 @@ if(check==-1){
 void VARIABLE_INITIALIZATION(int type, struct Obj in, struct Obj expr) { //heena byhsal feeha el two function el ablha 3latouul
 
 if(type != expr.set_type) {
-yyerror("Type mismatch");
+//yyerror("Type mismatch");
+fprintf(sementic_errors_file,"Type mismatch");
 }
     if(type == expr.set_type) {
         if(VARIABLE_DECLARATION(type, in)) SET_VALUE_OF_VAR(in, expr);
@@ -772,14 +786,19 @@ void initialize_stack_void(int type){
     function_type=type;
 }
 void initialize_function(int type, struct Obj in) { //heena byhsal feeha el two function el ablha 3latouul
-  if(!returned) yyerror("The function has no return");
+  if(!returned) {
+      //yyerror("The function has no return");
+      fprintf(sementic_errors_file,"The function has no return");
+      }
   FUNCTION_DECLARATION(type, in);
 }
 
 bool FUNCTION_DECLARATION(int type, struct Obj coming) { //awel may3rf variable ok m3aia
 int check=CHECK_DECLARATION(coming);
-    if(check != -1){yyerror("Function already declared!"); //already declared
-    return false;
+    if(check != -1){
+        //yyerror("Function already declared!"); //already declared
+        fprintf(sementic_errors_file,"Function already declared!"); //already declared
+        return false;
     }
     if (check == -1) { //so declare it
         ARRAY[index_ok].set_type = type; strcpy(ARRAY[index_ok].name, coming.name);
@@ -802,16 +821,21 @@ struct Obj get_function(struct Obj var){
     struct Obj result;
     int index=CHECK_DECLARATION(var);
     if(index==-1||!ARRAY[index].is_function){
-    yyerror("The function is not declared\n"); //can't declare x to this y value
+        //yyerror("The function is not declared\n"); //can't declare x to this y value
+        fprintf(sementic_errors_file,"The function is not declared\n"); //can't declare x to this y value
     }
     else{
     struct Obj x=ARRAY[index];
-    if(no_parameters!=x.no_arguments) yyerror("wrong number of paramters\n");
+    if(no_parameters!=x.no_arguments) {
+        //yyerror("wrong number of paramters\n");
+        fprintf(sementic_errors_file,"wrong number of paramters\n");
+        }
     int i=no_parameters-1;
         while(!isEmpty(parameters)){
             int x=pop(parameters);
             if(ARRAY[index].parameters[i]!=x){
-               yyerror("Wrong paramter types\n"); 
+               //yyerror("Wrong paramter types\n"); 
+               fprintf(sementic_errors_file,"Wrong paramter types\n"); 
                //return NULL;
             }
             i--;
@@ -833,7 +857,10 @@ struct Obj get_function(struct Obj var){
     return result;
 }
 bool check_return_type(struct Obj var){
-if(var.set_type!=function_type)yyerror("return type is wrong\n");
+if(var.set_type!=function_type){
+    //yyerror("return type is wrong\n");
+    fprintf(sementic_errors_file,"return type is wrong\n");
+    }
 else {
     returned=true;
     //printf("pop %s\n",result_name);
@@ -844,7 +871,10 @@ else {
     }
 }
 bool check_return_type_void(){
-if(VOID!=function_type)yyerror("return type is wrong\n");
+if(VOID!=function_type){
+    //yyerror("return type is wrong\n");
+    fprintf(sementic_errors_file,"return type is wrong\n");
+    }
 else returned=true;
 }
 void pop_paramters(){

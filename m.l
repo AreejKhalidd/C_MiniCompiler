@@ -1,10 +1,12 @@
 character [A-Za-z_]
 num [0-9]
 t   (true|false)
+%option nounput yylineno
+
 %{
 #include <stdlib.h>
 #include <string.h>
-void yyerror(char *);
+void yyerror(char *s);
 #include "m.tab.h"
 %}
 %%
@@ -115,8 +117,14 @@ return MULT;}
 [/] { yylval.Value_char = yytext[0]; 
 return DIV;}
 
-. yyerror("invalid character");
+
 %%
 int yywrap(void) {
-return 1;
+    return 1;
+}
+void yyerror(char *s){
+    FILE * fi;
+    fi=fopen("syntax_errors.txt", "w");
+    fprintf(fi,"%s in line %d\n",s,yylineno);
+    fclose(fi);
 }
