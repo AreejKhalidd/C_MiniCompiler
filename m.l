@@ -124,7 +124,7 @@ int yywrap(void) {
 }
 void yyerror(char *s){
     FILE * fi;
-    fi=fopen("syntax_errors.txt", "w");
+    fi=fopen("error.txt", "w");
     fprintf(fi,"%s in line %d\n",s,yylineno);
     fclose(fi);
 }
