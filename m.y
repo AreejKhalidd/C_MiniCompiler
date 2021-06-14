@@ -170,6 +170,8 @@ int lbl_function=0;
 
 int enum_counter=0;
 int lbl_switch=0;
+int lblfor1=0;
+int lblfor2=0;
 char switchcasevar[3];
 
 
@@ -192,6 +194,7 @@ void labelElse();
 void labelIf2();
 void labelif22();
 void labelRpt();
+void labelFUNC();
 void initialize_stack(int type);
 void initialize_stack_void(int type);
 void get_variable_object(int type,struct Obj coming);
@@ -377,7 +380,8 @@ D      :    DEFAULT   COLON statement
         ;
     
 WL  :  WHILE {label();} OPENROUND condtionalstatement CLOSEDROUND{label2();} DEF{label3();}
-FR       : FOR  OPENROUND statement SEMICOLON condtionalstatement SEMICOLON statement CLOSEDROUND DEF ;
+FR       : FOR  OPENROUND statement SEMICOLON {lblfor2=lbl++;printf("L%03d:\n", lblfor2);fprintf(quadruples_file,"L%03d:\n", lblfor2);}condtionalstatement{labelFUNC();} SEMICOLON statement CLOSEDROUND DEF{printf("jmp\tL%03d\n", lblfor2);
+fprintf(quadruples_file,"jmp\tL%03d\n",  lblfor2);printf("L%03d:\n", lblfor1);fprintf(quadruples_file,"L%03d:\n", lblfor1);} ;
 IFELSE   : IFF {labelIf2();} |
            IFFELSE
            ;
@@ -854,6 +858,11 @@ fprintf(quadruples_file,"L%03d:\n", lbl2-1);
 void labelif22(){
 printf("L%03d:\n", lbl2);
 fprintf(quadruples_file,"L%03d:\n", lbl2);
+}
+void labelFUNC(){
+    lblfor1=lbl++;
+printf("jnz\tL%03d\n", lblfor1);
+fprintf(quadruples_file,"jnz\tL%03d\n", lblfor1);
 }
 /*void labelRpt1(){
      printf("L%03d:\n", lbl2-1);
