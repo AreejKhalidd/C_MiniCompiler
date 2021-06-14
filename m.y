@@ -400,12 +400,71 @@ ENUMLIST      : VARIABLE {evaluate_enum_element($1);}
     fprintf(stderr, "%s\n", s);
 }*/
 
+void print_symbol_table()
+{
+    FILE* f_symbol=fopen("symbol_table", "w");
+    fprintf(f_symbol,"symbol\t\ttype\t\tvalue\n");
+    for(int i=0; i<index_ok;i=i+1)
+    {
+        fprintf(f_symbol,"%s\t\t",ARRAY[i].name);
+
+        if(ARRAY[i].is_function)
+            fprintf(f_symbol,"function\t\tN/A\n");
+        else
+        {
+             if(!ARRAY[i].is_initialized)
+            {
+                switch(ARRAY[i].set_type)
+                {
+                    case(INTEGER):
+                        fprintf(f_symbol,"integer\t\tnull\n");
+                        break;
+                    case(FLOAT):
+                        fprintf(f_symbol,"float\t\tnull\n");
+                        break;
+                    case(CHAR):
+                        fprintf(f_symbol,"char\t\tnull\n");
+                        break;
+                    case(BOOL):
+                        fprintf(f_symbol,"bool\t\tnull\n");
+                        break;
+                    default:
+                        break;
+                }
+
+            }
+            else
+            {
+                 switch(ARRAY[i].set_type)
+                {
+                    case(INTEGER):
+                        fprintf(f_symbol,"integer\t\t%s\n",ARRAY[i].integer_value);
+                        break;
+                    case(FLOAT):
+                        fprintf(f_symbol,"float\t\t%s\n",ARRAY[i].float_value);
+                        break;
+                    case(CHAR):
+                        fprintf(f_symbol,"char\t\t%s\n",ARRAY[i].char_value);
+                        break;
+                    case(BOOL):
+                        fprintf(f_symbol,"bool\t\t%s\n",ARRAY[i].bool_value);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+     fclose(f_symbol);
+
+}
 int main(int argc, char *argv[]) {
     extern FILE *yyin;
     yyin = fopen("test.cpp", "r");
     quadruples_file=fopen("quadruples.txt", "w");
     sementic_errors_file=fopen("sementic_errors.txt", "w");
     yyparse();
+    print_symbol_table();
     fclose(yyin);
     fclose(quadruples_file);
     return 0;
