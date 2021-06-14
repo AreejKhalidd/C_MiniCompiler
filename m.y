@@ -458,6 +458,7 @@ void print_symbol_table()
      fclose(f_symbol);
 
 }
+}
 int main(int argc, char *argv[]) {
     extern FILE *yyin;
     yyin = fopen("test.cpp", "r");
