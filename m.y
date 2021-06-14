@@ -242,6 +242,7 @@ void switchcasevar2(struct Obj var);
 }Quadruples[30];
 FILE * quadruples_file;
 FILE * sementic_errors_file;
+FILE* f_symbol;
 struct Stack* parameters;
 struct strlist* param_names;
 int no_parameters;
@@ -402,12 +403,13 @@ ENUMLIST      : VARIABLE {evaluate_enum_element($1);}
 
 void print_symbol_table()
 {
-    FILE* f_symbol=fopen("symbol_table", "w");
     fprintf(f_symbol,"symbol\t\ttype\t\tvalue\n");
-    for(int i=0; i<index_ok;i=i+1)
+    
+    printf("in file, %d",index_ok);
+    for(int i=0; i<index_ok;i++)
     {
         fprintf(f_symbol,"%s\t\t",ARRAY[i].name);
-
+        printf("inloop\n");
         if(ARRAY[i].is_function)
             fprintf(f_symbol,"function\t\tN/A\n");
         else
@@ -438,36 +440,40 @@ void print_symbol_table()
                  switch(ARRAY[i].set_type)
                 {
                     case(INTEGER):
-                        fprintf(f_symbol,"integer\t\t%s\n",ARRAY[i].integer_value);
+                        fprintf(f_symbol,"integer\t\t%d\n",ARRAY[i].integer_value);
                         break;
                     case(FLOAT):
-                        fprintf(f_symbol,"float\t\t%s\n",ARRAY[i].float_value);
+                        fprintf(f_symbol,"float\t\t%f\n",ARRAY[i].float_value);
                         break;
                     case(CHAR):
-                        fprintf(f_symbol,"char\t\t%s\n",ARRAY[i].char_value);
+                        fprintf(f_symbol,"char\t\t%c\n",ARRAY[i].char_value);
                         break;
                     case(BOOL):
-                        fprintf(f_symbol,"bool\t\t%s\n",ARRAY[i].bool_value);
+                        fprintf(f_symbol,"bool\t\t%d\n",ARRAY[i].bool_value);
                         break;
                     default:
                         break;
                 }
             }
         }
-
-     fclose(f_symbol);
-
 }
+
+
 }
 int main(int argc, char *argv[]) {
     extern FILE *yyin;
     yyin = fopen("test.cpp", "r");
     quadruples_file=fopen("quadruples.txt", "w");
     sementic_errors_file=fopen("sementic_errors.txt", "w");
+    f_symbol=fopen("symbol_table.txt", "w");
+
     yyparse();
-    print_symbol_table();
+  
     fclose(yyin);
     fclose(quadruples_file);
+    print_symbol_table();
+    fclose(f_symbol);
+
     return 0;
 }
 
