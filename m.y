@@ -348,7 +348,7 @@ BOOL2
 ;
 
 FUNCT  :  typeIdentifier VARIABLE  {initialize_stack($1);}  OPENROUND parameters CLOSEDROUND OPENCURLY{printf("L%03d:\n", lbl);fprintf(quadruples_file,"L%03d:\n", lbl);lbl_function=lbl++;printf("pop %s\n",address_register_name);fprintf(quadruples_file,"pop %s\n",address_register_name);pop_paramters();} functionstatements  CLOSEDCURLY{initialize_function($1,$2);}|
-          VOID VARIABLE {initialize_stack_void($1);} OPENROUND parameters CLOSEDROUND OPENCURLY {printf("L%03d:\n",lbl);fprintf(quadruples_file,"L%03d:\n",lbl);lbl_function=lbl++} functionstatements {printf("pop %s\n",result_name);fprintf(quadruples_file,"pop %s\n",result_name);printf("JMP %s\n",result_name);fprintf(quadruples_file,"JMP %s\n",result_name);} CLOSEDCURLY{initialize_function(VOID,$2);};
+          VOID VARIABLE {initialize_stack_void($1);} OPENROUND parameters CLOSEDROUND OPENCURLY {printf("L%03d:\n",lbl);fprintf(quadruples_file,"L%03d:\n",lbl);lbl_function=lbl++;printf("pop %s\n",address_register_name);fprintf(quadruples_file,"pop %s\n",address_register_name);} functionstatements {printf("pop %s\n",result_name);fprintf(quadruples_file,"pop %s\n",result_name);printf("JMP %s\n",result_name);fprintf(quadruples_file,"JMP %s\n",result_name);} CLOSEDCURLY{initialize_function(VOID,$2);};
 
 FUNCTCALL : VARIABLE OPENROUND {initialize_stack_void(1);} DeclaredParameters CLOSEDROUND{$$=get_function($1)};
 DeclaredParameters:expr{get_variable_object_type($1)}
