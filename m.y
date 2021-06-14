@@ -169,6 +169,8 @@ int lbl1,lbl2=0;
 int lbl_function=0;
 
 int enum_counter=0;
+int lbl_switch=0;
+char switchcasevar[3];
 
 
 void restart_enum_counter();
@@ -202,6 +204,11 @@ bool check_return_type(struct Obj var);
 bool check_return_type_void();
 void pop_paramters();
 void evaluate_enum_element(struct Obj element);
+void labelSwitch();
+void labelSwitch2();
+void labelswitch3(struct Obj intval);
+void switchcasevar2(struct Obj var);
+
 
 %} 
 
@@ -349,7 +356,7 @@ DeclaredParameters:expr{get_variable_object_type($1)}
 parameters : typeIdentifier VARIABLE{DECLARATION_function($1, $2); get_variable_object($1,$2);}
 | parameters COMMA typeIdentifier VARIABLE{DECLARATION_function($3, $4); get_variable_object($3,$4); };
 |;
-ST     :    SWITCH OPENROUND VARIABLE CLOSEDROUND OPENCURLY B CLOSEDCURLY
+ST     :    SWITCH OPENROUND VARIABLE{switchcasevar2($3);} CLOSEDROUND OPENCURLY B CLOSEDCURLY{labelSwitch();}
          ;
    
 B       :    C
@@ -357,12 +364,15 @@ B       :    C
         ;
    
 C      :    C    C
-        |CASE INTEGER COLON statement
-        |CASE INTEGER COLON statement BREAK
+        | BREAKSTATEMENT {printf("L%03d:\n",lbl);fprintf(quadruples_file,"L%03d:\n",lbl++);}
+        | BREAKSTATEMENT BREAK {labelSwitch2();printf("L%03d:\n",lbl);fprintf(quadruples_file,"L%03d:\n",lbl++);}
+        ;
+BREAKSTATEMENT : CASE INTEGER {labelswitch3($2);}  COLON statement 
         ;
 
-D      :    DEFAULT    COLON statement
-        | DEFAULT    COLON statement BREAK
+D      :    DEFAULT   COLON statement
+        | DEFAULT   COLON statement BREAK {labelSwitch2();}
+        | DEFAULT   COLON BREAK
         ;
     
 WL  :  WHILE {label();} OPENROUND condtionalstatement CLOSEDROUND{label2();} DEF{label3();}
@@ -446,6 +456,10 @@ struct Obj OPER(struct Obj in1, char operators, struct Obj in2) {
                 {result.float_value = in1.float_value * in2.float_value;}
                 else if (operators == '/') 
                 {result.float_value = in1.float_value / in2.float_value;}
+                result.is_initialized = true;
+            }
+            else if(in1.set_type==BOOL){
+                result.set_type = BOOL;
                 result.is_initialized = true;
             }
             else {
@@ -917,4 +931,24 @@ void pop_paramters(){
         fprintf(quadruples_file,"ST %s,%s\n",param_name,result_name);
         param_name=strlist_pop(param_names);
     }
+}
+void labelSwitch(){
+printf("L%03d:\n", lbl_switch);
+fprintf(quadruples_file,"L%03d:\n", lbl_switch);
+}
+void labelSwitch2(){
+printf("jmp\tL%03d\n", lbl_switch);
+fprintf(quadruples_file,"jmp\tL%03d\n",  lbl_switch); 
+}
+void labelswitch3(struct Obj intval){
+printf("LD %s,%s\n",result_name,switchcasevar);
+printf("compEQ %s,%d\n",result_name,intval.integer_value);
+printf("jnz\tL%03d\n", lbl);
+fprintf(quadruples_file,"LD %s,%s\n",result_name,switchcasevar);
+fprintf(quadruples_file,"compEQ %s,%d\n",result_name,intval.integer_value);
+fprintf(quadruples_file,"jnz\tL%03d\n", lbl);
+}
+void switchcasevar2(struct Obj var){
+    lbl_switch=lbl++;
+    strcpy(switchcasevar,var.name);
 }
